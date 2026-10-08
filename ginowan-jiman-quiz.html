@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ぼくたちの宜野湾のじまんクイズ | 産業まつり こどもクイズ</title>
+<style>
+:root{
+  --sky:#8ED8E8;
+  --sky-deep:#2E9BBF;
+  --ink:#123A4C;
+  --leaf:#4CA65C;
+  --leaf-soft:#E3F4E4;
+  --lotus:#F2799B;
+  --lotus-soft:#FDE9EF;
+  --cream:#FFF9EE;
+  --sun:#FFC93C;
+  --shadow:0 6px 0 rgba(18,58,76,.14);
+  --radius:22px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","M PLUS Rounded 1c","Yu Gothic UI","Meiryo",sans-serif;
+  background:linear-gradient(180deg,#A8E4F0 0%,#8ED8E8 38%,#BDEBD8 100%);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+/* ===== 湧き水の泡（背景シグネチャー） ===== */
+.bubbles{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.bubble{
+  position:absolute;bottom:-60px;border-radius:50%;
+  background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.95),rgba(255,255,255,.28) 62%,rgba(255,255,255,.06));
+  box-shadow:inset 0 0 6px rgba(255,255,255,.6);
+  animation:rise linear infinite;
+  opacity:.75;
+}
+@keyframes rise{
+  0%{transform:translateY(0) translateX(0);opacity:.75;}
+  45%{transform:translateY(-46vh) translateX(14px);}
+  100%{transform:translateY(-105vh) translateX(-10px);opacity:0;}
+}
+.wrap{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:16px 14px 40px;}
+/* ===== 共通パーツ ===== */
+.screen{display:none;animation:fadein .35s ease;}
+.screen.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.card{
+  background:var(--cream);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px 18px;
+  border:3px solid #fff;
+}
+.tagchip{
+  display:inline-block;background:var(--lotus-soft);color:var(--lotus);
+  font-weight:900;font-size:.85rem;border-radius:999px;padding:4px 14px;letter-spacing:.05em;
+}
+.btn{
+  font-family:inherit;border:none;cursor:pointer;
+  border-radius:999px;font-weight:900;color:#fff;
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.btn:active{transform:translateY(3px);}
+.btn:focus-visible{outline:3px solid var(--sun);outline-offset:3px;}
+/* ===== タイトル画面 ===== */
+.hero{text-align:center;padding:26px 16px 30px;position:relative;}
+.fes-badge{
+  display:inline-block;background:#fff;color:var(--sky-deep);
+  font-weight:900;font-size:.8rem;border-radius:999px;padding:6px 18px;
+  box-shadow:var(--shadow);letter-spacing:.08em;
+}
+.hero h1{
+  font-size:clamp(1.9rem,7vw,2.7rem);line-height:1.28;
+  margin:16px 0 6px;color:var(--ink);
+  text-shadow:0 3px 0 #fff,0 6px 12px rgba(18,58,76,.15);
+}
+.hero h1 .lotus{color:var(--lotus);}
+.hero .sub{font-weight:800;color:var(--sky-deep);letter-spacing:.12em;font-size:.95rem;}
+.lotus-big{
+  font-size:64px;line-height:1;display:inline-block;margin-top:22px;
+  filter:drop-shadow(0 8px 10px rgba(242,121,155,.35));
+  animation:sway 3.2s ease-in-out infinite;
+}
+@keyframes sway{0%,100%{transform:rotate(-5deg);}50%{transform:rotate(5deg);}}
+.host-card{
+  display:flex;gap:14px;align-items:flex-start;text-align:left;
+  background:#fff;border-radius:18px;padding:16px;margin:20px 0;
+  box-shadow:var(--shadow);
+}
+.host-face{
+  flex:0 0 64px;width:64px;height:64px;border-radius:50%;
+  background:var(--lotus-soft);display:flex;align-items:center;justify-content:center;
+  font-size:36px;border:3px solid var(--lotus);
+}
+.host-name{font-weight:900;font-size:.95rem;color:var(--lotus);}
+.host-msg{font-size:1.15rem;line-height:1.85;font-weight:700;}
+.host-msg .hl{color:var(--sky-deep);}
+.quiz-meta{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:14px 0 22px;}
+.quiz-meta span{
+  background:#fff;border-radius:999px;padding:7px 15px;font-weight:800;font-size:.95rem;
+  color:var(--ink);box-shadow:0 3px 0 rgba(18,58,76,.1);
+}
+.start-btn{
+  display:block;width:100%;max-width:420px;margin:0 auto;
+  background:linear-gradient(180deg,#FFD44D,var(--sun));
+  color:var(--ink);font-size:1.5rem;padding:18px;
+  box-shadow:0 6px 0 #D9A216,0 12px 22px rgba(217,162,22,.35);
+}
+.sound-note{margin-top:14px;font-size:.8rem;font-weight:800;color:var(--sky-deep);}
+/* ===== 出題画面 ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin:6px 2px 10px;}
+.qcount{font-weight:900;color:#fff;background:var(--sky-deep);border-radius:999px;padding:7px 18px;font-size:1.05rem;box-shadow:var(--shadow);}
+.topright{display:flex;gap:8px;align-items:center;}
+.scorechip{font-weight:900;color:var(--ink);background:#fff;border-radius:999px;padding:6px 14px;font-size:.9rem;box-shadow:var(--shadow);}
+.mutebtn{
+  width:44px;height:44px;border-radius:50%;background:#fff;color:var(--ink);
+  font-size:1.2rem;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;
+}
+.dots{display:flex;gap:6px;justify-content:center;margin:0 0 12px;}
+.dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.55);border:2px solid rgba(255,255,255,.9);}
+.dot.now{background:var(--sun);transform:scale(1.2);}
+.dot.ok{background:var(--leaf);}
+.dot.ng{background:var(--lotus);}
+.qcard{animation:fadein .3s ease;}
+.qhead{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;}
+.qgenre{background:var(--sky-deep);color:#fff;font-weight:900;border-radius:12px;padding:6px 16px;font-size:1.05rem;letter-spacing:.1em;}
+.qtext{font-size:clamp(1.45rem,6vw,1.8rem);font-weight:900;line-height:1.8;margin-bottom:6px;}
+.qtext .big{font-size:1.25em;color:var(--sky-deep);}
+/* 湧き水タイマー */
+.timer-zone{margin:14px 0 18px;}
+.timer-tube{
+  position:relative;height:26px;border-radius:999px;overflow:hidden;
+  background:#E3F1F5;border:3px solid #fff;box-shadow:inset 0 2px 6px rgba(18,58,76,.15);
+}
+.timer-water{
+  position:absolute;top:0;left:0;bottom:0;width:100%;
+  background:linear-gradient(90deg,#5CC6E0,#8ED8E8);
+  border-radius:999px 0 0 999px;
+  transition:width 1s linear;
+}
+.timer-water::after{
+  content:"";position:absolute;right:0;top:-4px;bottom:-4px;width:14px;
+  background:rgba(255,255,255,.7);border-radius:50%;
+  filter:blur(3px);
+}
+.timer-drop{
+  position:absolute;top:50%;transform:translate(-50%,-50%);
+  font-size:20px;transition:left 1s linear;pointer-events:none;
+}
+.timer-label{display:flex;justify-content:space-between;font-weight:900;font-size:1rem;color:var(--sky-deep);margin-top:6px;}
+.timer-zone.urgent .timer-label{color:var(--lotus);animation:blink 1s steps(2) infinite;}
+@keyframes blink{50%{opacity:.4;}}
+/* 選択肢 */
+.choices{display:grid;gap:12px;}
+.choices.grid2{grid-template-columns:1fr 1fr;}
+.choice{
+  background:#fff;color:var(--ink);
+  border:3px solid #D8E8EE;border-radius:18px;
+  font-family:inherit;font-size:1.25rem;font-weight:900;
+  padding:20px 16px;line-height:1.55;cursor:pointer;
+  box-shadow:0 4px 0 rgba(18,58,76,.12);
+  transition:transform .08s ease;
+  text-align:left;
+}
+.choice:active{transform:translateY(3px);}
+.choice:focus-visible{outline:3px solid var(--sun);outline-offset:3px;}
+.choice .num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:50%;background:var(--sky);color:#fff;
+  font-weight:900;margin-right:8px;flex:0 0 auto;font-size:1.1rem;
+  vertical-align:middle;
+}
+.choice.correct{background:var(--leaf-soft);border-color:var(--leaf);color:#2C6E38;}
+.choice.correct .num{background:var(--leaf);}
+.choice.wrong{background:var(--lotus-soft);border-color:var(--lotus);color:#B14E6C;}
+.choice.wrong .num{background:var(--lotus);}
+.choice.dim{opacity:.5;}
+.choice:disabled{cursor:default;}
+/* ○× */
+.mb-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.mb-btn{
+  font-family:inherit;cursor:pointer;border-radius:24px;border:none;
+  font-size:3.4rem;font-weight:900;padding:28px 0;color:#fff;
+  box-shadow:0 6px 0 rgba(18,58,76,.2);transition:transform .08s ease;
+}
+.mb-btn:active{transform:translateY(3px);}
+.mb-btn:focus-visible{outline:3px solid var(--sun);outline-offset:3px;}
+.mb-btn.maru{background:linear-gradient(180deg,#63C57A,var(--leaf));box-shadow:0 6px 0 #357A43;}
+.mb-btn.batsu{background:linear-gradient(180deg,#F58FAC,var(--lotus));box-shadow:0 6px 0 #C04E6E;}
+.mb-btn.correct{outline:6px solid var(--sun);}
+.mb-btn:disabled{cursor:default;}
+/* 順番当て */
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.slot{
+  background:#E3F1F5;border:3px dashed #A9CEDA;border-radius:14px;
+  min-height:58px;display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:1.05rem;color:var(--sky-deep);text-align:center;padding:6px;line-height:1.3;
+}
+.slot.filled{background:#fff;border-style:solid;border-color:var(--sky-deep);color:var(--ink);}
+.order-cards{display:grid;gap:10px;}
+.order-card{
+  background:#fff;border:3px solid #D8E8EE;border-radius:16px;
+  font-family:inherit;font-size:1.25rem;font-weight:900;padding:16px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;box-shadow:0 4px 0 rgba(18,58,76,.12);
+  transition:transform .08s ease;color:var(--ink);
+}
+.order-card:active{transform:translateY(2px);}
+.order-card.used{opacity:.35;pointer-events:none;}
+.order-card:focus-visible{outline:3px solid var(--sun);outline-offset:3px;}
+.order-card .kigo{
+  width:40px;height:40px;border-radius:50%;background:var(--leaf);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:900;flex:0 0 auto;font-size:1.1rem;
+}
+.order-reset{
+  margin-top:12px;background:#fff;color:var(--sky-deep);border:2px solid var(--sky-deep);
+  font-size:.9rem;padding:8px 20px;font-family:inherit;font-weight:900;cursor:pointer;border-radius:999px;
+}
+.order-hint{font-size:.85rem;font-weight:800;color:var(--sky-deep);margin-top:10px;text-align:center;}
+/* 連想 */
+.hint-list{display:grid;gap:10px;margin:14px 0 18px;}
+.hint-item{
+  background:var(--lotus-soft);border-radius:14px;padding:12px 16px;
+  font-weight:900;font-size:1.2rem;line-height:1.7;
+  opacity:0;transform:translateY(8px);transition:all .4s ease;
+  display:flex;gap:10px;align-items:flex-start;
+}
+.hint-item.show{opacity:1;transform:none;}
+.hint-item .hnum{
+  flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--lotus);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;
+}
+.hint-wait{font-weight:900;color:var(--lotus);text-align:center;animation:blink 1.2s steps(2) infinite;padding:6px 0;}
+/* 判定・解説 */
+.verdict{
+  text-align:center;font-size:2.1rem;font-weight:900;padding:14px 0 6px;
+  animation:pop .45s cubic-bezier(.2,2.2,.4,1);
+}
+.verdict.ok{color:var(--leaf);}
+.verdict.ng{color:var(--lotus);}
+@keyframes pop{0%{transform:scale(.4);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.verdict .emo{font-size:1.2em;}
+.explain{
+  background:#fff;border-radius:18px;padding:16px;margin-top:10px;
+  border:3px solid var(--sun);font-size:1.15rem;line-height:1.95;font-weight:700;
+  animation:fadein .4s ease;
+}
+.explain .ex-title{font-weight:900;color:var(--sky-deep);display:block;margin-bottom:6px;letter-spacing:.08em;}
+.next-btn{
+  display:block;width:100%;max-width:420px;margin:18px auto 0;
+  background:linear-gradient(180deg,#4FB8D6,var(--sky-deep));
+  font-size:1.35rem;padding:17px;box-shadow:0 6px 0 #1E6E8E;
+}
+/* 結果画面 */
+.result-hero{text-align:center;padding:10px 0 4px;}
+.result-label{font-weight:900;color:var(--sky-deep);letter-spacing:.2em;font-size:.95rem;}
+.score-big{
+  font-size:4.2rem;font-weight:900;line-height:1.1;color:var(--ink);
+  text-shadow:0 4px 0 #fff;
+}
+.score-big .den{font-size:1.6rem;color:var(--sky-deep);}
+.rank-title{
+  display:inline-block;margin:10px 0 4px;background:linear-gradient(180deg,#FFD44D,var(--sun));
+  border-radius:999px;padding:10px 30px;font-size:1.4rem;font-weight:900;color:var(--ink);
+  box-shadow:0 5px 0 #D9A216;animation:pop .5s cubic-bezier(.2,2.2,.4,1);
+}
+.rank-msg{font-weight:800;font-size:1.15rem;line-height:1.9;margin:12px 0 20px;}
+.recap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.recap-item{
+  background:#fff;border-radius:16px;padding:12px;font-weight:800;font-size:1rem;
+  line-height:1.55;box-shadow:0 3px 0 rgba(18,58,76,.1);text-align:left;
+  display:flex;gap:8px;align-items:flex-start;
+}
+.recap-item .remoji{font-size:1.4rem;flex:0 0 auto;line-height:1.3;}
+.again-btn{
+  display:block;width:100%;max-width:420px;margin:0 auto;
+  background:linear-gradient(180deg,#FFD44D,var(--sun));color:var(--ink);
+  font-size:1.35rem;padding:17px;box-shadow:0 6px 0 #D9A216;
+}
+.credit{text-align:center;font-size:.72rem;font-weight:700;color:var(--sky-deep);margin-top:22px;line-height:1.8;opacity:.85;}
+/* 振動 */
+.shake{animation:shake .4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+@media (prefers-reduced-motion: reduce){
+  .bubble,.lotus-big{animation:none !important;}
+  .timer-water,.timer-drop{transition:none !important;}
+}
+@media (max-width:420px){
+  .choices.grid2{grid-template-columns:1fr;}
+  .recap{grid-template-columns:1fr;}
+  .slots{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="bubbles" id="bubbles" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <!-- ===================== タイトル ===================== -->
+  <section class="screen active" id="screen-title">
+    <div class="hero card">
+      <span class="fes-badge">第37回 宜野湾市産業まつり 🎪 こどもクイズ</span>
+      <div class="lotus-big" aria-hidden="true">🪷</div>
+      <h1>ぼくたちの<br>宜野湾の<span class="lotus">じまん</span>クイズ</h1>
+      <p class="sub">〜大山（たいやま）の湧き水とレンコンの巻〜</p>
+
+      <div class="host-card">
+        <div class="host-face" aria-hidden="true">👦</div>
+        <div>
+          <div class="host-name">案内人：知念 陽翔（ちねん ひろと）・10さい</div>
+          <p class="host-msg">
+            ぼく、しゅくだいの「宜野湾のじまん」を さがしていて、大山（たいやま）で きれいな<span class="hl">湧き水（わきみず）</span>と、まっしろの<span class="hl">レンコン</span>を 見つけたんだ!<br>
+            その じまん、クイズに しちゃった。10問、いっしょに やろう!
+          </p>
+        </div>
+      </div>
+
+      <div class="quiz-meta">
+        <span>📝 全10問</span>
+        <span>⏱ 1問30秒</span>
+        <span>👶 小さい子もOK</span>
+        <span>⭐ せいかいでポイント</span>
+      </div>
+
+      <button class="btn start-btn" id="btn-start">クイズスタート! 🚀</button>
+      <p class="sound-note">🔊 おとが でるよ。きを つけてね!</p>
+    </div>
+    <p class="credit">
+      出題内容：かりゆし塾1班「島風Lab」活性化プラン（2026.10.05）より作成<br>
+      第37回宜野湾市産業まつり：令和8年11月21日（土）・22日（日）宜野湾海浜公園
+    </p>
+  </section>
+
+  <!-- ===================== 出題 ===================== -->
+  <section class="screen" id="screen-quiz">
+    <div class="topbar">
+      <span class="qcount" id="q-count">第1問</span>
+      <div class="topright">
+        <span class="scorechip" id="score-chip">⭐ 0</span>
+        <button class="btn mutebtn" id="btn-mute" aria-label="音のon/off">🔊</button>
+      </div>
+    </div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+
+    <div class="card qcard" id="q-card">
+      <div class="qhead">
+        <span class="qgenre" id="q-genre">ちしき</span>
+      </div>
+      <p class="qtext" id="q-text"></p>
+
+      <div class="timer-zone" id="timer-zone">
+        <div class="timer-tube" aria-hidden="true">
+          <div class="timer-water" id="timer-water"></div>
+          <div class="timer-drop" id="timer-drop">💧</div>
+        </div>
+        <div class="timer-label"><span>シンキングタイム</span><span id="timer-sec">のこり30びょう</span></div>
+      </div>
+
+      <div id="hint-area" style="display:none;">
+        <div class="hint-list" id="hint-list"></div>
+        <p class="hint-wait" id="hint-wait">💭 なにかな？ かんがえてね…</p>
+      </div>
+
+      <div id="answer-area"></div>
+      <div id="judge-area"></div>
+    </div>
+  </section>
+
+  <!-- ===================== 結果 ===================== -->
+  <section class="screen" id="screen-result">
+    <div class="card">
+      <div class="result-hero">
+        <p class="result-label">🏁 クイズけっか</p>
+        <div class="score-big"><span id="final-score">0</span><span class="den"> / 10もん</span></div>
+        <div class="rank-title" id="rank-title">🪷 レンコンマスター</div>
+        <p class="rank-msg" id="rank-msg"></p>
+      </div>
+
+      <p style="font-weight:900;font-size:1.1rem;color:var(--sky-deep);margin-bottom:8px;">📚 きょう ならんだ「じまん」リスト</p>
+      <div class="recap">
+        <div class="recap-item"><span class="remoji">💧</span><span>大山の 湧き水は、むかしから つづく「たからの水」</span></div>
+        <div class="recap-item"><span class="remoji">🪷</span><span>琉球レンコンは 切っても まっしろ！ アクぬきも いらない</span></div>
+        <div class="recap-item"><span class="remoji">🦁</span><span>1年に 600キロ！ ライオン 3とうぶんの レンコン</span></div>
+        <div class="recap-item"><span class="remoji">🌾</span><span>田んぼを ゼロに しない。これからの 100年へ つなげるよ</span></div>
+      </div>
+
+      <button class="btn again-btn" id="btn-again">もう1かいやる! 🔁</button>
+      <p style="text-align:center;font-weight:800;color:var(--sky-deep);margin-top:16px;line-height:1.8;">
+        11月21日・22日の産業まつりで、<br>ほんものの「じまん」を さがしてみよう! 🎪
+      </p>
+    </div>
+    <p class="credit">
+      出題内容：かりゆし塾1班「島風Lab」活性化プラン（2026.10.05）より作成<br>
+      第37回宜野湾市産業まつり：令和8年11月21日（土）・22日（日）宜野湾海浜公園
+    </p>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+/* ================= 効果音（Web Audio API） ================= */
+let actx = null;
+let soundOn = true;
+function ensureCtx(){
+  if(!actx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) actx = new AC();
+  }
+  if(actx && actx.state === "suspended") actx.resume();
+}
+function tone(freq, delay, dur, type, vol, slideTo){
+  if(!soundOn || !actx) return;
+  const t0 = actx.currentTime + delay;
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = type || "sine";
+  o.frequency.setValueAtTime(freq, t0);
+  if(slideTo) o.frequency.linearRampToValueAtTime(slideTo, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol || 0.2, t0 + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(actx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+const sStart   = () => { tone(523,0,.12,"triangle",.22); tone(784,.13,.2,"triangle",.22); };
+const sClick   = () => tone(760,0,.07,"square",.09);
+const sOrder   = () => { tone(620,0,.07,"square",.1); tone(930,.07,.09,"square",.1); };
+const sHint    = () => { tone(660,0,.1,"sine",.16); tone(990,.11,.16,"sine",.16); };
+const sTick    = (n) => tone(820 + (10-n)*70, 0, .05, "square", .07);
+const sCorrect = () => { tone(784,0,.16,"triangle",.26); tone(1046.5,.17,.34,"triangle",.26); tone(1318.5,.34,.3,"sine",.14); };
+const sWrong   = () => { tone(233,0,.22,"sawtooth",.18); tone(185,.22,.4,"sawtooth",.18); };
+const sTimeUp  = () => { tone(440,0,.3,"sawtooth",.2); tone(330,.25,.55,"sawtooth",.2,220); };
+const sFanfare = () => {
+  [523,659,784,1046].forEach((f,i)=>tone(f,i*.14,.22,"triangle",.22));
+  tone(1318.5,.6,.6,"triangle",.25);
+  tone(659,.6,.6,"sine",.12);
+};
+
+/* ================= クイズデータ（PDF 1〜4章の要素分解より） ================= */
+const QUESTIONS = [
+  { /* 2章：宜野湾市の概要 */
+    type:"choice", genre:"ちしき",
+    text:"宜野湾市（ぎのわんし）には、10まん人 くらいの人が 住んでいるよ。宜野湾市は おきなわの中で <span class='big'>なんばんめ</span>の 大きさかな？",
+    choices:["1ばんめ","3ばんめ","5ばんめ","10ばんめ"], correct:2,
+    explain:"せいかいは「5ばんめ」！ 宜野湾市は おきなわ本島（ほんとう）の まんなか・西側（にしがわ）にあって、けん内で 5ばんめに 大きいまち。でんしゃも バスも とおりやすい、べんりな まちなんだ。まちの まんなかから 西の 大山（たいやま）には、これから出てくる 湧き水の 田んぼが あるんだよ。"
+  },
+  { /* 1・2章：湧き水 */
+    type:"renso", genre:"れんそう",
+    text:"ぼくが 大山で 見つけた この<span class='big'>「なにか」</span>、いったい なんだ？",
+    hints:[
+      "大山（たいやま）の じめんの中から、ぽこんぽこんと 出てきてるよ",
+      "つめたくて さらさら。そのまま のめるよ",
+      "これが あるから、レンコンの 田んぼが げんきなんだ"
+    ],
+    choices:["湧き水（わきみず）","プールの水","じょうろの水","あめのしずく"], correct:0,
+    explain:"せいかいは「湧き水（わきみず）」！ 山に ふった 雨が じめんに しみこんで、また 外から ぽこんと 出てくる、しぜんの 水なんだ。なんと むかしむかし（琉球 おうちょう じだい）から ずっと わきつづけている、たからの水！ このおかげで、東京ドーム 8こぶんの 田んぼが げんきに なってるんだよ。"
+  },
+  { /* 4章：水中で育つ */
+    type:"marubatsu", genre:"まるばつ",
+    text:"レンコンは つちの中で <span class='big'>パリパリに</span> そだつ。この話、<span class='big'>まる？ ばつ？</span>",
+    correct:false,
+    explain:"こたえは ✗！ 琉球（りゅうきゅう）レンコンは つちの中じゃなくて、大山の 湧き水が たっぷり入った「田んぼのお水の中」で そだつんだ。水の中を すいすい のびていく、ふしぎな やさいなんだよ！"
+  },
+  { /* 4章：アク抜き不要・真っ白 */
+    type:"choice", genre:"ちしき",
+    text:"琉球レンコンを 切って、しばらく おいておいたよ。<span class='big'>どうなった</span>かな？",
+    choices:["ずっと まっしろのまま","すぐに まっくろ","ピンクいろになった","まんまるになった"], correct:0,
+    explain:"せいかいは「ずっと まっしろのまま」！ ふつうの レンコンは 切ると くろずんでくるけど、琉球レンコンは「アク」という にがみの もとが すくないから まっしろ！ アクぬきという めんどうも いらないんだ。りょうり人さんから「すきとおった あまみ」と ほめてもらって、ホテルや ゆうめいな お店でも つかってるよ！"
+  },
+  { /* 4章：体験プログラムの流れ */
+    type:"order", genre:"じゅんばん",
+    text:"ぼくが 大山の 田んぼで <span class='big'>レンコンほり</span>を したよ！ 4つを <span class='big'>じゅんばん</span>に ならべかえて！",
+    items:[["あ","😋 たべる"],["い","⛏ レンコンを ほる"],["う","🚿 水で あらう"],["え","👀 湧き水を 見る"]],
+    correct:[3,1,2,0],
+    explain:"せいかいは「え→い→う→あ」！ さいしょに 湧き水を 見て、つぎに レンコンを ほって、水で ぴかぴかに あらって、さいごに たべる！ どろの中から レンコンを 見つけると、宝探し（たからさがし）みたいで たのしいんだよ。ひとつの 田んぼで ぜんぶ できちゃうんだ！"
+  },
+  { /* 4章：600kg */
+    type:"choice", genre:"かず",
+    text:"おきなわで 琉球レンコンを そだてている人は、宜野湾の <span class='big'>たった1人</span>！ 1ねんに とれる レンコンは、おとなのライオン 3とうぶん！ いったい <span class='big'>なんキロ</span>かな？",
+    choices:["6キロ","60キロ","600キロ","6000キロ"], correct:2,
+    explain:"せいかいは「600キロ」！ おとなのライオン 3とうぶんの おもさだよ。おくすりを つかわないで、大山の 湧き水と たいわん生まれの たねで、ぱくぱく おいしく そだってるんだ。こんな すごい レンコン、もっとたくさんの人に しって ほしいね！"
+  },
+  { /* 4章：台風に強い */
+    type:"marubatsu", genre:"まるばつ",
+    text:"台風（たいふう）が きても、レンコンは <span class='big'>だいじょうぶ</span>。これ まる？ ばつ？",
+    correct:true,
+    explain:"こたえは ○！ レンコンは 水の中で そだつから、つよい 風の 日も、やわらかい「水のおふとん」が ボディーガードに なって まもってくれるんだ。台風が おおい おきなわでも げんきに そだつ、つよい やさいなんだよ。たねから しゅうかくまで、およそ 4かげつ！"
+  },
+  { /* 3章：どろんこ運動会・担い手減少 */
+    type:"marubatsu", genre:"まるばつ",
+    text:"むかし、大山の 田んぼでは 子どもが <span class='big'>30人くらい</span> あつまって「どろんこ運動会」を していた。これ まる？ ばつ？",
+    correct:true,
+    explain:"こたえは ○！ でも いまは、田んぼを かしてくれる 農家さんが へって、どろんこ運動会は おやすみ中…。むかしは 60け もの 家が 田いもを そだてていたのに、いまは ほんきで そだてているのは 2〜3人だけなんだ。だから「島風Lab（しまかぜラボ）」のみんなは、この 田んぼを これからも つづけようと がんばっているんだ！"
+  },
+  { /* 1章：水田の縮小と琉球蓮根への挑戦 */
+    type:"choice", genre:"かんがえる",
+    text:"大山の 田んぼは、これから <span class='big'>とっても ちいさく</span> なってしまうんだ。でも だいじょうぶ！ <span class='big'>なんでかな？</span>",
+    choices:["レンコンを そだてる人が いるから","田んぼが あるいて どこかへ いくから","雨が ずっと ふりつづけるから","ロボットが まもるから"], correct:0,
+    explain:"せいかいは「レンコンを そだてる人が いるから」！ 田んぼが ちいさくなっても、湧き水に こだわって 琉球レンコンを そだてる 生産者（せいさんしゃ）さんが いるんだ。その人の チャレンジで、宜野湾の あたらしい「じまん」が うまれつづけているんだよ！"
+  },
+  { /* 5章ペルソナ：まとめ（陽翔の発表） ※必ず最後に出題 */
+    type:"choice", genre:"まとめ", final:true,
+    text:"<span class='big'>さいごの もんだい！</span> ぼくが 学校で はなした「これが、ぼくたちの 宜野湾の じまんです!」の <span class='big'>じまん</span>は？",
+    choices:["宜野湾コンベンションセンター","琉球レンコンの 田んぼと 湧き水","えいがかん","プール"], correct:1,
+    explain:"せいかいは「琉球レンコンの 田んぼと 湧き水」！ みんなが しってるものも いいけど、じぶんの 目で 見つけたことが いちばんの「じまん」に なるんだ。きみも 大山（たいやま）で、きみだけの「宜野湾の じまん」を 見つけてみてね！"
+  }
+];
+const TIME_LIMIT = 30;
+
+/* ================= 出題順シャッフル ================= */
+function shuffle(arr){
+  for(let k = arr.length - 1; k > 0; k--){
+    const j = Math.floor(Math.random() * (k + 1));
+    [arr[k], arr[j]] = [arr[j], arr[k]];
+  }
+  return arr;
+}
+/* ふつうの9問だけシャッフル。「さいごの問題!」は必ず一番最後 */
+function buildOrder(){
+  const normal = [];
+  const last = [];
+  QUESTIONS.forEach((q, k) => (q.final ? last : normal).push(k));
+  return shuffle(normal).concat(shuffle(last));
+}
+
+/* ================= 状態 ================= */
+const state = { i:0, score:0, timerId:null, tickId:null, timeLeft:TIME_LIMIT, locked:false, picks:[], order:[] };
+const $ = (s) => document.querySelector(s);
+const screens = { title:$("#screen-title"), quiz:$("#screen-quiz"), result:$("#screen-result") };
+
+function showScreen(name){
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[name].classList.add("active");
+  window.scrollTo(0,0);
+}
+
+/* ================= 泡 ================= */
+(function makeBubbles(){
+  const box = $("#bubbles");
+  for(let k=0;k<12;k++){
+    const b = document.createElement("span");
+    b.className = "bubble";
+    const size = 8 + Math.random()*26;
+    b.style.width = b.style.height = size + "px";
+    b.style.left = (Math.random()*100) + "%";
+    b.style.animationDuration = (7 + Math.random()*8) + "s";
+    b.style.animationDelay = (-Math.random()*12) + "s";
+    box.appendChild(b);
+  }
+})();
+
+/* ================= 進行 ================= */
+$("#btn-start").addEventListener("click", () => {
+  ensureCtx(); sStart();
+  state.i = 0; state.score = 0;
+  state.order = buildOrder();
+  $("#score-chip").textContent = "⭐ 0";
+  showScreen("quiz");
+  renderQuestion();
+});
+$("#btn-again").addEventListener("click", () => {
+  ensureCtx(); sStart();
+  state.i = 0; state.score = 0;
+  state.order = buildOrder();
+  $("#score-chip").textContent = "⭐ 0";
+  showScreen("quiz");
+  renderQuestion();
+});
+$("#btn-mute").addEventListener("click", function(){
+  soundOn = !soundOn;
+  this.textContent = soundOn ? "🔊" : "🔇";
+  if(soundOn){ ensureCtx(); sClick(); }
+});
+
+function buildDots(){
+  const box = $("#dots");
+  box.innerHTML = "";
+  QUESTIONS.forEach((q,k) => {
+    const d = document.createElement("span");
+    d.className = "dot";
+    box.appendChild(d);
+  });
+}
+function paintDots(){
+  [...$("#dots").children].forEach((d,k) => {
+    d.className = "dot" + (k===state.i ? " now" : "");
+  });
+}
+
+function renderQuestion(){
+  state.locked = false; state.picks = [];
+  stopTimer();
+  paintDots();
+  const q = QUESTIONS[state.order[state.i]];
+  $("#q-count").textContent = "第" + (state.i+1) + "問";
+  $("#q-genre").textContent = q.genre;
+  $("#q-text").innerHTML = q.text;
+  $("#judge-area").innerHTML = "";
+  $("#hint-area").style.display = "none";
+  $("#hint-list").innerHTML = "";
+  $("#hint-wait").style.display = "none";
+
+  // タイマー表示リセット
+  resetTimerBar(true);
+  const tz = $("#timer-zone");
+  if(q.type === "renso"){ tz.style.display = "none"; } else { tz.style.display = ""; }
+
+  const area = $("#answer-area");
+  area.innerHTML = "";
+  if(q.type === "choice"){
+    area.appendChild(renderChoice(q));
+    startTimer();
+  } else if(q.type === "marubatsu"){
+    area.appendChild(renderMarubatsu(q));
+    startTimer();
+  } else if(q.type === "order"){
+    area.appendChild(renderOrder(q));
+    startTimer();
+  } else if(q.type === "renso"){
+    renderRenso(q);
+  }
+}
+
+/* ---------- 4択 ---------- */
+function renderChoice(q){
+  const grid = document.createElement("div");
+  grid.className = "choices grid2";
+  q.choices.forEach((c,k) => {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.innerHTML = "<span class='num'>" + ["①","②","③","④"][k] + "</span>" + c;
+    b.addEventListener("click", () => {
+      if(state.locked) return;
+      state.locked = true; stopTimer(); sClick();
+      judgeChoice(q, k, grid);
+    });
+    grid.appendChild(b);
+  });
+  return grid;
+}
+function judgeChoice(q, k, grid){
+  const btns = [...grid.children];
+  btns.forEach((b,idx) => {
+    b.disabled = true;
+    if(idx === q.correct) b.classList.add("correct");
+    else if(idx === k) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  finish(q, k === q.correct);
+}
+
+/* ---------- ○× ---------- */
+function renderMarubatsu(q){
+  const row = document.createElement("div");
+  row.className = "mb-row";
+  const mk = (isMaru, label) => {
+    const b = document.createElement("button");
+    b.className = "mb-btn " + (isMaru ? "maru" : "batsu");
+    b.textContent = label;
+    b.setAttribute("aria-label", isMaru ? "まる" : "ばつ");
+    b.addEventListener("click", () => {
+      if(state.locked) return;
+      state.locked = true; stopTimer(); sClick();
+      const ans = isMaru;
+      [...row.children].forEach(x => x.disabled = true);
+      const ok = ans === q.correct;
+      if(q.correct) row.querySelector(".maru").classList.add("correct");
+      else row.querySelector(".batsu").classList.add("correct");
+      if(!ok) b.classList.add("shake");
+      finish(q, ok);
+    });
+    return b;
+  };
+  row.appendChild(mk(true,"○"));
+  row.appendChild(mk(false,"✗"));
+  return row;
+}
+
+/* ---------- 順番当て ---------- */
+function renderOrder(q){
+  const wrap = document.createElement("div");
+  const slots = document.createElement("div");
+  slots.className = "slots";
+  for(let k=0;k<4;k++){
+    const s = document.createElement("div");
+    s.className = "slot";
+    s.innerHTML = (k+1) + "ばんめ";
+    slots.appendChild(s);
+  }
+  const cards = document.createElement("div");
+  cards.className = "order-cards";
+  const cardBtns = [];
+  q.items.forEach((item,k) => {
+    const b = document.createElement("button");
+    b.className = "order-card";
+    b.innerHTML = "<span class='kigo'>" + item[0] + "</span><span>" + item[1] + "</span>";
+    b.addEventListener("click", () => {
+      if(state.locked || b.classList.contains("used")) return;
+      sOrder();
+      b.classList.add("used");
+      state.picks.push(k);
+      const slot = slots.children[state.picks.length-1];
+      slot.classList.add("filled");
+      slot.innerHTML = "<span>" + item[0] + " " + item[1] + "</span>";
+      if(state.picks.length === 4){
+        state.locked = true; stopTimer();
+        setTimeout(() => {
+          cardBtns.forEach(x => x.disabled = true);
+          const ok = state.picks.every((p,idx) => p === q.correct[idx]);
+          if(!ok){
+            // 正解じゅんばんをスロットに表示
+            q.correct.forEach((p,idx) => {
+              slots.children[idx].innerHTML = "<span>✅ " + q.items[p][0] + " " + q.items[p][1] + "</span>";
+              slots.children[idx].style.borderColor = "var(--leaf)";
+            });
+            if(cardBtns[q.correct[q.correct.length-1]]){} // no-op
+          }
+          finish(q, ok);
+        }, 450);
+      }
+    });
+    cardBtns.push(b);
+    cards.appendChild(b);
+  });
+  const reset = document.createElement("button");
+  reset.className = "order-reset";
+  reset.textContent = "やりなおす ↺";
+  reset.addEventListener("click", () => {
+    if(state.locked) return;
+    sClick();
+    state.picks = [];
+    [...slots.children].forEach((s,k) => { s.classList.remove("filled"); s.style.borderColor=""; s.innerHTML = (k+1)+"ばんめ"; });
+    cardBtns.forEach(b => b.classList.remove("used"));
+  });
+  const hint = document.createElement("p");
+  hint.className = "order-hint";
+  hint.textContent = "カードを じゅんばんに タップしてね!";
+  wrap.appendChild(slots);
+  wrap.appendChild(cards);
+  wrap.appendChild(reset);
+  wrap.appendChild(hint);
+  return wrap;
+}
+
+/* ---------- 連想 ---------- */
+function renderRenso(q){
+  const area = $("#hint-area");
+  area.style.display = "";
+  const list = $("#hint-list");
+  q.hints.forEach((h,k) => {
+    const item = document.createElement("div");
+    item.className = "hint-item";
+    item.innerHTML = "<span class='hnum'>ヒント" + (k+1) + "</span><span>" + h + "</span>";
+    list.appendChild(item);
+  });
+  let n = 0;
+  const step = () => {
+    list.children[n].classList.add("show");
+    sHint(); n++;
+    if(n < q.hints.length){
+      setTimeout(step, 3200);
+    } else {
+      $("#hint-wait").style.display = "none";
+      const tz = $("#timer-zone");
+      tz.style.display = "";
+      resetTimerBar(true);
+      $("#answer-area").appendChild(renderChoice(q));
+      $("#timer-zone").scrollIntoView({behavior:"smooth", block:"nearest"});
+      startTimer();
+    }
+  };
+  $("#hint-wait").style.display = "";
+  setTimeout(step, 700);
+}
+
+/* ================= タイマー ================= */
+function resetTimerBar(show){
+  const w = $("#timer-water"), d = $("#timer-drop"), z = $("#timer-zone");
+  w.style.width = show ? "100%" : w.style.width;
+  d.style.left = show ? "calc(100% - 14px)" : d.style.left;
+  $("#timer-sec").textContent = "のこり" + TIME_LIMIT + "びょう";
+  z.classList.remove("urgent");
+}
+function startTimer(){
+  state.timeLeft = TIME_LIMIT;
+  resetTimerBar(true);
+  state.timerId = setInterval(() => {
+    state.timeLeft--;
+    const ratio = Math.max(0, state.timeLeft / TIME_LIMIT) * 100;
+    $("#timer-water").style.width = ratio + "%";
+    $("#timer-drop").style.left = "calc(" + ratio + "% - 0px)";
+    $("#timer-sec").textContent = "のこり" + state.timeLeft + "びょう";
+    if(state.timeLeft <= 10){
+      $("#timer-zone").classList.add("urgent");
+      sTick(state.timeLeft);
+    }
+    if(state.timeLeft <= 0) timeUp();
+  }, 1000);
+}
+function stopTimer(){
+  clearInterval(state.timerId);
+  state.timerId = null;
+}
+function timeUp(){
+  stopTimer();
+  sTimeUp();
+  state.locked = true;
+  const q = QUESTIONS[state.order[state.i]];
+  // 正解を出してあげる
+  if(q.type === "choice"){
+    [...$("#answer-area").querySelectorAll(".choice")].forEach((b,idx) => {
+      b.disabled = true;
+      if(idx === q.correct) b.classList.add("correct");
+      else b.classList.add("dim");
+    });
+  } else if(q.type === "marubatsu"){
+    [...$("#answer-area").querySelectorAll(".mb-btn")].forEach(b => b.disabled = true);
+    const okBtn = q.correct ? ".maru" : ".batsu";
+    $("#answer-area").querySelector(okBtn).classList.add("correct");
+  } else if(q.type === "order"){
+    [...$("#answer-area").querySelectorAll(".order-card")].forEach(b => { b.classList.add("used"); b.disabled = true; });
+    q.correct.forEach((p,idx) => {
+      const s = $("#answer-area").querySelectorAll(".slot")[idx];
+      s.classList.add("filled");
+      s.innerHTML = "<span>✅ " + q.items[p][0] + " " + q.items[p][1] + "</span>";
+    });
+  }
+  finish(q, false, true);
+}
+
+/* ================= 判定・解説 ================= */
+function finish(q, ok, isTimeUp){
+  stopTimer();
+  state.locked = true;
+  if(ok){ state.score++; $("#score-chip").textContent = "⭐ " + state.score; sCorrect(); }
+  else if(!isTimeUp){ sWrong(); }
+  $("#dots").children[state.i].classList.add(ok ? "ok" : "ng");
+  const verdict = document.createElement("p");
+  verdict.className = "verdict " + (ok ? "ok" : "ng");
+  verdict.setAttribute("role","status");
+  verdict.innerHTML = ok
+    ? "<span class='emo'>🎉</span> せいかい！ さすが！"
+    : (isTimeUp ? "<span class='emo'>⏰</span> タイムアップ！"
+               : "<span class='emo'>💦</span> ざんねん…！");
+  const ex = document.createElement("div");
+  ex.className = "explain";
+  ex.innerHTML = "<span class='ex-title'>📖 ここで ひとくい がっしゅう!</span>" + q.explain;
+  const next = document.createElement("button");
+  next.className = "btn next-btn";
+  next.textContent = (state.i === QUESTIONS.length-1) ? "けっかをみる! 🏁" : "つぎの問題へ ▶";
+  next.addEventListener("click", () => {
+    sClick();
+    state.i++;
+    if(state.i < QUESTIONS.length) renderQuestion();
+    else showResult();
+  });
+  const j = $("#judge-area");
+  j.innerHTML = "";
+  j.appendChild(verdict);
+  j.appendChild(ex);
+  j.appendChild(next);
+  j.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+/* ================= 結果 ================= */
+function showResult(){
+  stopTimer();
+  sFanfare();
+  const s = state.score;
+  $("#final-score").textContent = s;
+  let title, msg;
+  if(s === 10){ title = "🪷 レンコンマスター"; msg = "10問 ぜんぶ せいかい!! きみは もう 大山（たいやま）の ともだちだね。陽翔（ひろと）くんと いっしょに、じまんを ひろめて!"; }
+  else if(s >= 8){ title = "💧 湧き水博士"; msg = "あと すこしで マスター! まちがえた もんだいも もう ばっちり。きみの「じまん」は これから どんどん ふえていくよ!"; }
+  else if(s >= 5){ title = "🌾 大山たんけんたい"; msg = "大山の ことが、きっと すきに なったはず! 産業まつり（さんぎょうまつり）で、その きもちを もっと おおきく しよう!"; }
+  else { title = "🌱 しんじんたんけんたい"; msg = "さいしょは みんな ここから! きょう ならんだことを、おうちの 人に はなしてみてね。きっと「へえ!」って よろこぶよ!"; }
+  $("#rank-title").textContent = title;
+  $("#rank-msg").textContent = msg;
+  showScreen("result");
+}
+
+buildDots();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
