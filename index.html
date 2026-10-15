@@ -108,6 +108,32 @@ body{
   color:var(--ink);font-size:1.5rem;padding:18px;
   box-shadow:0 6px 0 #D9A216,0 12px 22px rgba(217,162,22,.35);
 }
+/* むずかしさ選択 */
+.diff-label{text-align:center;font-weight:900;color:var(--sky-deep);margin:18px 0 10px;font-size:1.1rem;letter-spacing:.06em;}
+.diff-grid{display:grid;gap:12px;max-width:420px;margin:0 auto;}
+.diff-btn{
+  display:flex;align-items:center;gap:14px;width:100%;
+  border-radius:18px;padding:14px 18px;font-family:inherit;text-align:left;border:none;cursor:pointer;
+  transition:transform .08s ease;
+}
+.diff-btn:active{transform:translateY(3px);}
+.diff-btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px;}
+.diff-btn .d-emoji{font-size:1.9rem;flex:0 0 auto;}
+.diff-btn .d-txt{display:flex;flex-direction:column;line-height:1.4;text-align:left;}
+.diff-btn .d-name{font-size:1.3rem;font-weight:900;}
+.diff-btn .d-desc{font-size:.85rem;font-weight:800;opacity:.9;}
+.diff-btn.easy{background:linear-gradient(180deg,#FFD44D,var(--sun));color:var(--ink);box-shadow:0 5px 0 #D9A216;}
+.diff-btn.normal{background:linear-gradient(180deg,#63C57A,var(--leaf));color:#fff;box-shadow:0 5px 0 #357A43;}
+.diff-btn.oni{background:linear-gradient(180deg,#F2705F,#D94A3D);color:#fff;box-shadow:0 5px 0 #A93A30;}
+.diffchip{font-weight:900;border-radius:999px;padding:7px 14px;font-size:.95rem;box-shadow:var(--shadow);}
+.diffchip.easy{background:#FFF3C9;color:#8A6A00;}
+.diffchip.normal{background:var(--leaf-soft);color:#2C6E38;}
+.diffchip.oni{background:#FDE3DE;color:#A93A30;}
+.back-btn{
+  display:block;width:100%;max-width:420px;margin:10px auto 0;
+  background:#fff;color:var(--sky-deep);border:3px solid var(--sky-deep);
+  font-size:1.05rem;padding:12px;font-family:inherit;font-weight:900;cursor:pointer;border-radius:999px;
+}
 .sound-note{margin-top:14px;font-size:.8rem;font-weight:800;color:var(--sky-deep);}
 /* ===== 出題画面 ===== */
 .topbar{display:flex;align-items:center;justify-content:space-between;margin:6px 2px 10px;}
@@ -319,12 +345,16 @@ body{
 
       <div class="quiz-meta">
         <span>📝 全10問</span>
-        <span>⏱ 1問30秒</span>
-        <span>👶 小さい子もOK</span>
+        <span>🎚 むずかしさ 3レベル</span>
         <span>⭐ せいかいでポイント</span>
       </div>
 
-      <button class="btn start-btn" id="btn-start">クイズスタート! 🚀</button>
+      <p class="diff-label">▼ むずかしさを えらんで スタート!</p>
+      <div class="diff-grid">
+        <button class="btn diff-btn easy" data-diff="easy"><span class="d-emoji">🍼</span><span class="d-txt"><span class="d-name">やさしい</span><span class="d-desc">未就学児・小学低学年むけ／1問30秒</span></span></button>
+        <button class="btn diff-btn normal" data-diff="normal"><span class="d-emoji">📖</span><span class="d-txt"><span class="d-name">ふつう</span><span class="d-desc">小学6年・中学生むけ／1問25秒</span></span></button>
+        <button class="btn diff-btn oni" data-diff="hard"><span class="d-emoji">😈</span><span class="d-txt"><span class="d-name">鬼</span><span class="d-desc">高校生・大人むけ／1問20秒</span></span></button>
+      </div>
       <p class="sound-note">🔊 おとが でるよ。きを つけてね!</p>
     </div>
     <p class="credit">
@@ -338,6 +368,7 @@ body{
     <div class="topbar">
       <span class="qcount" id="q-count">第1問</span>
       <div class="topright">
+        <span class="diffchip easy" id="diff-chip">🍼 やさしい</span>
         <span class="scorechip" id="score-chip">⭐ 0</span>
         <button class="btn mutebtn" id="btn-mute" aria-label="音のon/off">🔊</button>
       </div>
@@ -373,6 +404,7 @@ body{
     <div class="card">
       <div class="result-hero">
         <p class="result-label">🏁 クイズけっか</p>
+        <p style="margin:8px 0 2px;"><span class="diffchip easy" id="result-diff">🍼 やさしい</span></p>
         <div class="score-big"><span id="final-score">0</span><span class="den"> / 10もん</span></div>
         <div class="rank-title" id="rank-title">🪷 レンコンマスター</div>
         <p class="rank-msg" id="rank-msg"></p>
@@ -386,7 +418,8 @@ body{
         <div class="recap-item"><span class="remoji">🌾</span><span>田んぼを ゼロに しない。これからの 100年へ つなげるよ</span></div>
       </div>
 
-      <button class="btn again-btn" id="btn-again">もう1かいやる! 🔁</button>
+      <button class="btn again-btn" id="btn-again">もう1かい やる! 🔁</button>
+      <button class="btn back-btn" id="btn-back">むずかしさを えらびなおす 🎚</button>
       <p style="text-align:center;font-weight:800;color:var(--sky-deep);margin-top:16px;line-height:1.8;">
         11月21日・22日の産業まつりで、<br>ほんものの「じまん」を さがしてみよう! 🎪
       </p>
@@ -440,7 +473,8 @@ const sFanfare = () => {
 };
 
 /* ================= クイズデータ（PDF 1〜4章の要素分解より） ================= */
-const QUESTIONS = [
+/* 【やさしい】未就学児・小学低学年むけ */
+const QUESTIONS_EASY = [
   { /* 2章：宜野湾市の概要 */
     type:"choice", genre:"ちしき",
     text:"宜野湾市（ぎのわんし）には、10まん人 くらいの人が 住んでいるよ。宜野湾市は おきなわの中で <span class='big'>なんばんめ</span>の 大きさかな？",
@@ -508,7 +542,173 @@ const QUESTIONS = [
     explain:"せいかいは「琉球レンコンの 田んぼと 湧き水」！ みんなが しってるものも いいけど、じぶんの 目で 見つけたことが いちばんの「じまん」に なるんだ。きみも 大山（たいやま）で、きみだけの「宜野湾の じまん」を 見つけてみてね！"
   }
 ];
-const TIME_LIMIT = 30;
+
+/* 【ふつう】小学6年・中学生むけ */
+const QUESTIONS_NORMAL = [
+  { /* 2章：都市構造 */
+    type:"choice", genre:"ちしき",
+    text:"宜野湾市の<span class='big'>中央</span>を大きく占め、その周囲を市街地が囲むという、特徴的な都市構造の要因となっているものは？",
+    choices:["沖縄県庁","普天間飛行場","宜野湾港","コンベンションセンター"], correct:1,
+    explain:"正解は「普天間飛行場（米軍基地）」！ 宜野湾市は沖縄本島中部の西海岸に位置し、市の中央を普天間飛行場が占め、その周囲を市街地が囲む特徴的な都市構造。5市町村に隣接する交通の要衝でもあります。"
+  },
+  { /* 3章：担い手の減少 */
+    type:"choice", genre:"かず",
+    text:"かつて大山地区では<span class='big'>60世帯以上</span>の農家が田芋を栽培していました。現在、販売を目的に本格的に栽培している農家は何人程度？",
+    choices:["20〜30人","10人程度","2〜3人","ほぼゼロ"], correct:2,
+    explain:"正解は「2〜3人」。60世帯以上が田芋栽培に携わっていた大山地区ですが、いま本格的に栽培する農家はわずか2〜3名。担い手の減少が、大山の農業文化を支える大きな課題になっています。"
+  },
+  { /* 4章：栽培の歴史 */
+    type:"choice", genre:"ちしき",
+    text:"先代が11年前に田芋から転作し、6年前に荒川氏が引き継いだ、沖縄で唯一の生産者が育てる作物は？",
+    choices:["さとうきび","マンゴー","琉球蓮根","たばこ"], correct:2,
+    explain:"正解は「琉球蓮根」！ NATURAL TONEの荒川夫妻が大山の水田で育てています。本土の品種が根付かない中、台湾系品種との適合に成功した、沖縄で貴重な蓮根なんです。"
+  },
+  { /* 4章：アク抜き不要の要因 */
+    type:"choice", genre:"かんがえる",
+    text:"琉球レンコンが<span class='big'>「アク抜き不要」</span>である要因として、PDFで挙げられている<span class='big'>組み合わせ</span>は？",
+    choices:["品種の力だけが優れているから","台湾系品種と大山の湧き水の水質、無農薬栽培","収穫後に海水で洗うから","土壌が酸性だから"], correct:1,
+    explain:"正解は「台湾系品種と大山の湧き水の水質、無農薬栽培」。この組み合わせにより、アク抜き・皮むきが不要で、切っても何時間置いても真っ白、加熱しても黒ずみません。"
+  },
+  { /* 4章：加熱 */
+    type:"marubatsu", genre:"まるばつ",
+    text:"琉球レンコンは、<span class='big'>加熱しても黒ずまない</span>。",
+    correct:true,
+    explain:"答えは ○！ 切っても何時間置いても真っ白なまま、加熱しても黒ずみません。料理人から「雑味のない透き通った甘み」と評され、県内リゾートホテルやミシュラン掲載店でも使われています。"
+  },
+  { /* 5章：コンセプト3ステップ */
+    type:"order", genre:"じゅんばん",
+    text:"このプランのコンセプト<span class='big'>「知る・拓く・遺す」</span>。3ステップを 正しい順番に ならべかえて！",
+    items:[["う","遺す（未来を育てる）"],["あ","知る（価値を創る）"],["い","拓く（地域をつなぐ）"]],
+    correct:[1,2,0],
+    explain:"正しい順番は「知る→拓く→遺す」！ ①知る（認知・特産化期）：ホテル連携で価値を創る ②拓く（田園再生期）：産業まつり出店などで地域をつなぐ ③遺す（次の100年期）：教育カリキュラムに組み込み未来を育てます。"
+  },
+  { /* 4章：連想 */
+    type:"renso", genre:"れんそう",
+    text:"<span class='big'>これ</span>が表しているものは何？",
+    hints:[
+      "県内リゾートホテルや、ミシュラン掲載店でも使われている",
+      "切っても何時間置いても真っ白。アク抜きも皮むきも不要",
+      "沖縄で唯一の生産者が、大山の水田で年間約600kg収穫している"
+    ],
+    choices:["もずく","田芋","うこん","琉球レンコン"], correct:3,
+    explain:"正解は「琉球レンコン」！ 無農薬で育つ琉球レンコンは、宜野湾市の新たな特産品としてのポテンシャルを秘めています。約4か月で収穫でき、水中で育つため台風にも強いんです。"
+  },
+  { /* 3章：どろんこ運動会の途絶えた理由 */
+    type:"marubatsu", genre:"まるばつ",
+    text:"子ども会が30名規模で開いていた「どろんこ運動会」は、<span class='big'>新型コロナの流行だけが原因</span>で途絶えた。",
+    correct:false,
+    explain:"答えは ✗！ コロナ禍前後に途絶えたのは事実ですが、主な原因は田んぼを提供できる農家が減ったこと。運動会の消失そのものが、担い手減少という地域課題の表れとも言えます。"
+  },
+  { /* 5章：ロードマップの位置づけ */
+    type:"choice", genre:"かんがえる",
+    text:"宜野湾市産業まつりへの出店や地域イベントを通じて行政・企業・学校・住民を巻き込む取り組みは、ロードマップの<span class='big'>どのステップ</span>に位置する？",
+    choices:["知る（認知・特産化期）","拓く（田園再生期）","遺す（次の100年期）","対象外"], correct:1,
+    explain:"正解は「拓く（田園再生期）」。ホテルでの料理提供で「知る」→産業まつり出店や農機具導入・遊休農地活用で「拓く」→中学校の職業人講話など教育に組み込む「遺す」へと、3ステップで進めます。"
+  },
+  { /* 1章：まとめ ※必ず最後に出題 */
+    type:"choice", genre:"まとめ", final:true,
+    text:"<span class='big'>最後の問題！</span> このプランが区画整理後の水田を立て直すうえで目指す場の姿は？",
+    choices:["大規模ショッピングセンター","地域が共に支え、未来へ紡ぐ場","企業専用の研究施設","観光客限定のテーマパーク"], correct:1,
+    explain:"正解は「地域が共に支え、未来へ紡ぐ場」。区画整理による水田の集約を「縮小」ではなく、農家だけの場から地域みんなで支える場へ再構築する機会と捉え、次の100年へつなげるプランです。"
+  }
+];
+
+/* 【鬼】高校生・大人むけ */
+const QUESTIONS_HARD = [
+  { /* 1章：縮小率の計算 */
+    type:"choice", genre:"けいさん",
+    text:"大山の水田は現在約36haですが、区画整理により将来的には約1.8haまで縮小する見通しです。縮小後の水田は、現在の<span class='big'>何％</span>に相当する？",
+    choices:["約2%","約5%","約10%","約20%"], correct:1,
+    explain:"正解は「約5%」。1.8÷36＝0.05。東京ドーム約8個ぶんの水田は、その1/20の面積まで縮小します。だからこそ、限られた営農ゾーンをどう再生するかが本プランの核心です。"
+  },
+  { /* 3章：負の連鎖の構造 */
+    type:"order", genre:"じゅんばん",
+    text:"大山が直面する<span class='big'>「負の連鎖」</span>。4つの要素を、連鎖が生じる<span class='big'>順番</span>に並べ替えて！",
+    items:[["う","体験・学びの場の消失"],["あ","担い手の減少"],["え","地域への関心の低下"],["い","田んぼの荒廃・縮小・都市化"]],
+    correct:[1,3,0,2],
+    explain:"正しい順は「担い手の減少→田んぼの荒廃・縮小・都市化→体験・学びの場の消失→地域への関心の低下」→そして「さらなる担い手の減少」。この悪循環を断ち切ることが、活性化プランの出発点です。"
+  },
+  { /* 4章：品種適合の要因 */
+    type:"choice", genre:"かんがえる",
+    text:"先代の転作当時、本土の品種は沖縄で根付かなかった。その中で台湾系品種が適合に成功した要因として、PDFが挙げる<span class='big'>組み合わせ</span>は？",
+    choices:["台湾系品種の栽培技術だけ","台湾系品種と大山の湧き水の水質、無農薬栽培","排水性の高い砂地と高温","ハウス栽培による温度管理"], correct:1,
+    explain:"正解は「台湾系品種と大山の湧き水の水質、無農薬栽培」。機能的魅力の源泉は品種単独ではなく、品種×水質×栽培方法の組み合わせにあります。これがアク抜き不要・高い食味の根拠です。"
+  },
+  { /* 4章：月平均の計算 */
+    type:"choice", genre:"けいさん",
+    text:"沖縄で唯一の生産者が年間約600kgを収穫している。<span class='big'>1か月あたり</span>の平均収穫量はおよそ何kg？",
+    choices:["約25kg","約50kg","約100kg","約200kg"], correct:1,
+    explain:"正解は「約50kg」。600kg÷12か月＝50kg。蓮根は水中で育つため台風にも強く、約4か月で収穫できる安定した作物です。"
+  },
+  { /* 1・3章：営農ゾーンの懸念 */
+    type:"marubatsu", genre:"まるばつ",
+    text:"PDFは、区画整理で集約される営農ゾーン（約1.8ha）ですら、このままでは<span class='big'>「使われない農地」</span>になると指摘している。",
+    correct:true,
+    explain:"答えは ○！ 「このままでは集約された営農ゾーンですら『使われない農地』となり、豊かな湧水で構築された農業文化は子どもたちが語れない記憶になってしまう」とPDFは指摘。だからこそ琉球蓮根を核とした再生プランが必要なのです。"
+  },
+  { /* 4章：ホテルフェアの戦略 */
+    type:"choice", genre:"かんがえる",
+    text:"県内ホテルのレストランで琉球蓮根料理を期間限定提供する「ホテルフェア」。この取り組みの戦略的な狙いとして<span class='big'>最も適切</span>なものは？",
+    choices:["在庫の消化","観光客の集客だけ","高付加価値化によるブランド構築と営農基盤の強化","新商品のテスト販売"], correct:2,
+    explain:"正解は「高付加価値化によるブランド構築と営農基盤の強化」。ホテル・料理人・自治体・観光事業者を巻き込み、産地や生産者の物語を発信することで「大山の農地と味を知る人」を増やし、地域のブランド化につなげます。"
+  },
+  { /* 2章：人口の正確な値 */
+    type:"choice", genre:"ちしき",
+    text:"宜野湾市の人口（令和8年8月末の市統計）は約10万人と紹介されています。PDFが示す<span class='big'>より正確な数値</span>はどれ？",
+    choices:["82,340人","95,000人","100,230人","165,300人"], correct:2,
+    explain:"正解は「100,230人」（令和8年8月末時点の宜野湾市人口統計より）。県内5番目の都市で、5市町村に隣接する交通の要衝です。"
+  },
+  { /* 4章：連想（物語的魅力） */
+    type:"renso", genre:"れんそう",
+    text:"<span class='big'>これ</span>が指すものは何？",
+    hints:[
+      "「新しく作られた特産品」ではなく、「大山という土地が持っていた湧水の力・農業文化の再発見」と位置づけられている",
+      "琉球王朝時代から続く湧水のみで育てるため、タネや肥料も要らず、永続的に収穫が可能",
+      "料理人から「雑味のない透き通った甘み」と評され、加熱しても黒ずまない"
+    ],
+    choices:["田芋","うこん","琉球蓮根","もずく"], correct:2,
+    explain:"正解は「琉球蓮根」。その特性は特産品の枠ではなく「大山の水と農地を次の世代へつなぐ」物語的魅力の核。機能・体験・物語の3つの魅力がそろった地域資源です。"
+  },
+  { /* 4章：収穫期間の数値 */
+    type:"marubatsu", genre:"まるばつ",
+    text:"琉球レンコンは水中で育つため台風に強いが、<span class='big'>収穫まで約8か月</span>かかる。",
+    correct:false,
+    explain:"答えは ✗！ 台風に強いのは事実ですが、収穫までの期間は約4か月。水中で育つ特性と短いサイクルが、沖縄の気候に合った安定生産を可能にしています。"
+  },
+  { /* 5章：遺す期 ※必ず最後に出題 */
+    type:"choice", genre:"まとめ", final:true,
+    text:"<span class='big'>最後の問題！</span> ロードマップ第3ステップ「遺す（次の100年期）」で実施する取り組みとして<span class='big'>正しい</span>ものは？",
+    choices:["ホテルフェアの開催と物語の発信","農機具導入と遊休農地の活用","中学校の職業人講話・職場体験を起点としたカリキュラム編成と「体験田」の提言","産業まつりへの出店と野菜詰め放題"], correct:2,
+    explain:"正解は「中学校の職業人講話・職場体験を起点に、カリキュラムや子ども会の年間行事へ組み込み、営農ゾーン・農業公園計画に『体験田』『田芋・蓮根のルーツを伝える機能』を提言」。「知る（ホテルフェア）→拓く（農機具・まつり出店）→遺す（教育・提言）」が全体像です。"
+  }
+];
+
+/* ================= むずかしさ設定 ================= */
+const DIFF = {
+  easy:   { label:"やさしい", emoji:"🍼", time:30, set: QUESTIONS_EASY },
+  normal: { label:"ふつう",   emoji:"📖", time:25, set: QUESTIONS_NORMAL },
+  hard:   { label:"鬼",       emoji:"😈", time:20, set: QUESTIONS_HARD }
+};
+const RANKS = {
+  easy: [
+    { min:10, t:"🪷 レンコンマスター", m:"10問 ぜんぶ せいかい!! きみは もう 大山（たいやま）の ともだちだね。陽翔（ひろと）くんと いっしょに、じまんを ひろめて!" },
+    { min:8,  t:"💧 湧き水博士", m:"あと すこしで マスター! まちがえた もんだいも もう ばっちり。きみの「じまん」は これから どんどん ふえていくよ!" },
+    { min:5,  t:"🌾 大山たんけんたい", m:"大山の ことが、きっと すきに なったはず! 産業まつり（さんぎょうまつり）で、その きもちを もっと おおきく しよう!" },
+    { min:0,  t:"🌱 しんじんたんけんたい", m:"さいしょは みんな ここから! きょう ならんだことを、おうちの 人に はなしてみてね。きっと「へえ!」って よろこぶよ!" }
+  ],
+  normal: [
+    { min:10, t:"👑 蓮根マイスター", m:"10問全部せいかい! 小6・中学生レベルの難問をコンプリート。大山の悪循環を断つキーパーソンは、きみだ!" },
+    { min:8,  t:"🎓 湧水エキスパート", m:"あと少しでマイスター! 間違えた問題の解説をもう一度読めば、さらに強くなれる。" },
+    { min:5,  t:"🌾 大山研究者", m:"半分以上せいかい! 担い手不足から3ステップ構想まで、大山の実情をかなり読み解けたはず。" },
+    { min:0,  t:"🌱 みならいたんけんたい", m:"ここからが楽しい! 解説を読み返して、ぜんぶ正解をめざして再挑戦しよう。" }
+  ],
+  hard: [
+    { min:10, t:"😈 鬼クリア・蓮根マイスター", m:"全問正解は相当な実力! 高校生・大人レベルの鬼問題を制したきみこそ、明日の大山を語れるリーダーだ!" },
+    { min:8,  t:"🎓 一流の湧水博士", m:"あと一歩で伝説に! 数値計算も負の連鎖も読み解けた君なら、もう1回で全問制覇できるはず。" },
+    { min:5,  t:"⚔ 大山ナビゲーター", m:"鬼モードでこの成績は大健闘! 間違えた構造問題は、解説でロジックを追うと次は解ける。" },
+    { min:0,  t:"🛡 これから鬼たんけんたい", m:"鬼は最初からフルスロットル。全部のヒントは解説の中にある。やさしい・ふつうで力をつけて、再挑戦だ!" }
+  ]
+};
 
 /* ================= 出題順シャッフル ================= */
 function shuffle(arr){
@@ -518,16 +718,17 @@ function shuffle(arr){
   }
   return arr;
 }
-/* ふつうの9問だけシャッフル。「さいごの問題!」は必ず一番最後 */
-function buildOrder(){
+/* ふつうの問題だけシャッフル。「さいごの問題!」(final) は必ず一番最後 */
+function buildOrder(set){
   const normal = [];
   const last = [];
-  QUESTIONS.forEach((q, k) => (q.final ? last : normal).push(k));
+  set.forEach((q, k) => (q.final ? last : normal).push(k));
   return shuffle(normal).concat(shuffle(last));
 }
 
 /* ================= 状態 ================= */
-const state = { i:0, score:0, timerId:null, tickId:null, timeLeft:TIME_LIMIT, locked:false, picks:[], order:[] };
+const state = { i:0, score:0, timerId:null, tickId:null, timeLeft:30, diff:"easy", locked:false, picks:[], order:[] };
+const curSet = () => DIFF[state.diff].set;
 const $ = (s) => document.querySelector(s);
 const screens = { title:$("#screen-title"), quiz:$("#screen-quiz"), result:$("#screen-result") };
 
@@ -553,22 +754,23 @@ function showScreen(name){
 })();
 
 /* ================= 進行 ================= */
-$("#btn-start").addEventListener("click", () => {
+function startQuiz(diff){
   ensureCtx(); sStart();
+  state.diff = diff;
+  state.timeLimit = DIFF[diff].time;
   state.i = 0; state.score = 0;
-  state.order = buildOrder();
+  state.order = buildOrder(curSet());
   $("#score-chip").textContent = "⭐ 0";
+  const d = DIFF[diff];
+  $("#diff-chip").textContent = d.emoji + " " + d.label;
+  $("#diff-chip").className = "diffchip " + diff;
+  buildDots();
   showScreen("quiz");
   renderQuestion();
-});
-$("#btn-again").addEventListener("click", () => {
-  ensureCtx(); sStart();
-  state.i = 0; state.score = 0;
-  state.order = buildOrder();
-  $("#score-chip").textContent = "⭐ 0";
-  showScreen("quiz");
-  renderQuestion();
-});
+}
+document.querySelectorAll(".diff-btn").forEach(b => b.addEventListener("click", function(){ startQuiz(this.dataset.diff); }));
+$("#btn-again").addEventListener("click", () => startQuiz(state.diff));
+$("#btn-back").addEventListener("click", () => { sClick(); showScreen("title"); });
 $("#btn-mute").addEventListener("click", function(){
   soundOn = !soundOn;
   this.textContent = soundOn ? "🔊" : "🔇";
@@ -578,7 +780,7 @@ $("#btn-mute").addEventListener("click", function(){
 function buildDots(){
   const box = $("#dots");
   box.innerHTML = "";
-  QUESTIONS.forEach((q,k) => {
+  curSet().forEach((q,k) => {
     const d = document.createElement("span");
     d.className = "dot";
     box.appendChild(d);
@@ -594,7 +796,7 @@ function renderQuestion(){
   state.locked = false; state.picks = [];
   stopTimer();
   paintDots();
-  const q = QUESTIONS[state.order[state.i]];
+  const q = curSet()[state.order[state.i]];
   $("#q-count").textContent = "第" + (state.i+1) + "問";
   $("#q-genre").textContent = q.genre;
   $("#q-text").innerHTML = q.text;
@@ -684,7 +886,9 @@ function renderOrder(q){
   const wrap = document.createElement("div");
   const slots = document.createElement("div");
   slots.className = "slots";
-  for(let k=0;k<4;k++){
+  const N = q.items.length;
+  slots.style.gridTemplateColumns = "repeat(" + N + ",1fr)";
+  for(let k=0;k<N;k++){
     const s = document.createElement("div");
     s.className = "slot";
     s.innerHTML = (k+1) + "ばんめ";
@@ -705,7 +909,7 @@ function renderOrder(q){
       const slot = slots.children[state.picks.length-1];
       slot.classList.add("filled");
       slot.innerHTML = "<span>" + item[0] + " " + item[1] + "</span>";
-      if(state.picks.length === 4){
+      if(state.picks.length === N){
         state.locked = true; stopTimer();
         setTimeout(() => {
           cardBtns.forEach(x => x.disabled = true);
@@ -781,15 +985,15 @@ function resetTimerBar(show){
   const w = $("#timer-water"), d = $("#timer-drop"), z = $("#timer-zone");
   w.style.width = show ? "100%" : w.style.width;
   d.style.left = show ? "calc(100% - 14px)" : d.style.left;
-  $("#timer-sec").textContent = "のこり" + TIME_LIMIT + "びょう";
+  $("#timer-sec").textContent = "のこり" + state.timeLimit + "びょう";
   z.classList.remove("urgent");
 }
 function startTimer(){
-  state.timeLeft = TIME_LIMIT;
+  state.timeLeft = state.timeLimit;
   resetTimerBar(true);
   state.timerId = setInterval(() => {
     state.timeLeft--;
-    const ratio = Math.max(0, state.timeLeft / TIME_LIMIT) * 100;
+    const ratio = Math.max(0, state.timeLeft / state.timeLimit) * 100;
     $("#timer-water").style.width = ratio + "%";
     $("#timer-drop").style.left = "calc(" + ratio + "% - 0px)";
     $("#timer-sec").textContent = "のこり" + state.timeLeft + "びょう";
@@ -808,7 +1012,7 @@ function timeUp(){
   stopTimer();
   sTimeUp();
   state.locked = true;
-  const q = QUESTIONS[state.order[state.i]];
+  const q = curSet()[state.order[state.i]];
   // 正解を出してあげる
   if(q.type === "choice"){
     [...$("#answer-area").querySelectorAll(".choice")].forEach((b,idx) => {
@@ -850,11 +1054,11 @@ function finish(q, ok, isTimeUp){
   ex.innerHTML = "<span class='ex-title'>📖 ここで ひとくい がっしゅう!</span>" + q.explain;
   const next = document.createElement("button");
   next.className = "btn next-btn";
-  next.textContent = (state.i === QUESTIONS.length-1) ? "けっかをみる! 🏁" : "つぎの問題へ ▶";
+  next.textContent = (state.i === curSet().length-1) ? "けっかをみる! 🏁" : "つぎの問題へ ▶";
   next.addEventListener("click", () => {
     sClick();
     state.i++;
-    if(state.i < QUESTIONS.length) renderQuestion();
+    if(state.i < curSet().length) renderQuestion();
     else showResult();
   });
   const j = $("#judge-area");
@@ -871,13 +1075,13 @@ function showResult(){
   sFanfare();
   const s = state.score;
   $("#final-score").textContent = s;
-  let title, msg;
-  if(s === 10){ title = "🪷 レンコンマスター"; msg = "10問 ぜんぶ せいかい!! きみは もう 大山（たいやま）の ともだちだね。陽翔（ひろと）くんと いっしょに、じまんを ひろめて!"; }
-  else if(s >= 8){ title = "💧 湧き水博士"; msg = "あと すこしで マスター! まちがえた もんだいも もう ばっちり。きみの「じまん」は これから どんどん ふえていくよ!"; }
-  else if(s >= 5){ title = "🌾 大山たんけんたい"; msg = "大山の ことが、きっと すきに なったはず! 産業まつり（さんぎょうまつり）で、その きもちを もっと おおきく しよう!"; }
-  else { title = "🌱 しんじんたんけんたい"; msg = "さいしょは みんな ここから! きょう ならんだことを、おうちの 人に はなしてみてね。きっと「へえ!」って よろこぶよ!"; }
-  $("#rank-title").textContent = title;
-  $("#rank-msg").textContent = msg;
+  const d = DIFF[state.diff];
+  const rd = $("#result-diff");
+  rd.textContent = d.emoji + " " + d.label;
+  rd.className = "diffchip " + state.diff;
+  const r = RANKS[state.diff].find(x => s >= x.min);
+  $("#rank-title").textContent = r.t;
+  $("#rank-msg").textContent = r.m;
   showScreen("result");
 }
 
