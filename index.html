@@ -134,6 +134,31 @@ ruby rt{font-size:.46em;font-weight:700;letter-spacing:0}
 .lv-btn[data-lv="normal"]{--c:#1E7FD8;--cl:#DCEBFB}
 .lv-btn[data-lv="hard"]{--c:#F59A2C;--cl:#FFEBD3}
 .lv-btn[data-lv="oni"]{--c:#D7263D;--cl:#FCE0E4}
+/* だんだん むずかしく なる はしご */
+.ladder{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:900px}
+.rung{--c:#3BA55C;--cl:#DFF4E5;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px 12px;border-radius:22px;
+  background:linear-gradient(180deg,var(--cl) 0 46%,#fff 46%);border:3px solid var(--ink);box-shadow:0 6px 0 var(--ink)}
+.rung:not(:last-child)::after{content:"";position:absolute;right:-13px;top:44px;width:14px;height:14px;background:#fff;border:3px solid var(--ink);border-left:0;border-bottom:0;transform:rotate(45deg);z-index:1}
+.rung .ic{width:66px;height:66px;border-radius:50%;background:#fff;border:3px solid var(--ink);display:grid;place-items:center}
+.rung .ic svg{width:46px;height:46px}
+.rung .nm{font-family:var(--pop);font-size:clamp(17px,2vw,22px);line-height:1.45}
+.rung .nm rt{font-size:.42em}
+.rung .no{font-size:14px;line-height:1.5;color:var(--ink-2)}
+.rung .pips{display:flex;gap:3px}
+.rung .pips svg{width:14px;height:18px}
+.rung[data-lv="normal"]{--cl:#DCEBFB}
+.rung[data-lv="hard"]{--cl:#FFEBD3}
+.rung[data-lv="oni"]{--cl:#FCE0E4;transform:scale(1.04)}
+.start-btn{min-height:84px;padding:0 70px;font-size:32px;margin-top:10px}
+.lv-tag.up{animation:lvup .6s cubic-bezier(.3,1.6,.5,1)}
+@keyframes lvup{0%{transform:scale(.6)}100%{transform:scale(1)}}
+.lvup-ic{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#fff;border:3px solid var(--ink);vertical-align:middle;margin-right:10px}
+.lvup-ic svg{width:38px;height:38px}
+.lvup-msg{font-size:22px;line-height:1.8;font-weight:900}
+.rv-lv{display:inline-block;font-size:12px;line-height:1;padding:5px 9px;border-radius:999px;margin-right:8px;vertical-align:2px;background:#DFF4E5;color:#22703A}
+.rv-lv[data-lv="normal"]{background:#DCEBFB;color:#1E66B0}
+.rv-lv[data-lv="hard"]{background:#FFEBD3;color:#A35A00}
+.rv-lv[data-lv="oni"]{background:#FCE0E4;color:#B51D31}
 .title-foot{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:12px}
 .tip{font-size:17px;font-weight:900}
 
@@ -317,8 +342,8 @@ li.ok .rv-mark{background:var(--ok)} li.ng .rv-mark{background:var(--ng)}
 
 /* ---------- 画面サイズ ---------- */
 @media (max-width:820px){
-  .levels{grid-template-columns:repeat(2,1fr)}
-  .lv-btn{background:linear-gradient(180deg,var(--cl) 0 42%,#fff 42%)}
+  .ladder{grid-template-columns:repeat(2,1fr)}
+  .rung:nth-child(2)::after{display:none}
 }
 @media (max-width:760px){
   .res-top{grid-template-columns:1fr}
@@ -339,7 +364,8 @@ li.ok .rv-mark{background:var(--ok)} li.ng .rv-mark{background:var(--ng)}
   .title{font-size:clamp(44px,5.3vw,74px)}
   .hero{max-width:560px}
   .bubble{font-size:18px}
-  .levels{grid-template-columns:1fr 1fr}
+  .ladder{grid-template-columns:repeat(2,1fr)}
+  .rung:nth-child(2)::after{display:none}
   .pick{margin-top:0}
   .key{height:60px}
   .keypad{gap:10px}
@@ -379,8 +405,9 @@ li.ok .rv-mark{background:var(--ok)} li.ng .rv-mark{background:var(--ng)}
       </div>
       </div>
       <div class="menu">
-      <h2 class="pick">レベルを えらんで スタート！</h2>
-      <div class="levels" id="levels"></div>
+      <h2 class="pick">だんだん むずかしく なる 10もん！</h2>
+      <ol class="ladder" id="ladder" aria-label="もんだいの むずかしさ"></ol>
+      <button class="go-btn start-btn press" id="startBtn" type="button">スタート！</button>
       <div class="title-foot">
         <button class="snd-btn pill press" type="button"></button>
         <button class="fs-btn pill press" type="button"></button>
@@ -485,9 +512,11 @@ li.ok .rv-mark{background:var(--ok)} li.ng .rv-mark{background:var(--ng)}
 /* =========================================================
    問題データ
    ---------------------------------------------------------
-   ・レベルごとに BANK.easy / normal / hard / oni に入っています。
-   ・1回のゲームで、各レベルからランダムに10問を出します。
-     （同じ topic の問題は1ゲームに1問まで。前回出た問題は後回し）
+   ・ぜんぶで50問。むずかしさごとに BANK.easy / normal / hard / oni に入っています。
+   ・1回のゲームは10問。レベルえらびは なく、だんだん むずかしく なります。
+       1〜3問目 かんたん → 4〜6問目 ふつう → 7〜9問目 むずかしい → 10問目 鬼
+     （出す順番は GAME_PLAN で変えられます。同じ topic の問題は1ゲームに1問まで。
+       前回出た問題は後回し）
    ・ふりがなは {漢字|よみ} と書きます。かんたん・ふつうでは
      ふりがな表示、むずかしい・鬼では漢字だけ（読み上げには使います）。
    ・形式（type）
@@ -507,44 +536,26 @@ easy: [
    exp:'{宜野湾市|ぎのわんし}は おきなわほんとうの にしがわに あって、うみに めんしているよ。'},
   {id:'e02',topic:'taimo',type:'choice',q:'{大山|おおやま}の たんぼで そだててきた いもは どれ？',c:['{田芋|たいも}','じゃがいも','さつまいも'],a:0,
    exp:'{大山|おおやま}の たんぼでは、わきみずを つかって {田芋|たいも}を そだててきたんだ。'},
-  {id:'e03',topic:'taimo',type:'ox',q:'{大山|おおやま}の たんぼでは、わきみずを つかって {田芋|たいも}を そだててきた。',a:true,
-   exp:'まちの なかに ひろがる {大山|おおやま}の たんぼ。わきみずで {田芋|たいも}を そだててきた、たいせつな ばしょだよ。'},
   {id:'e04',topic:'wakimizu',type:'choice',q:'じめんの したから わきでる きれいな みずを なんという？',c:['わきみず','あまみず','うみの みず'],a:0,
    exp:'じめんの したから わきでる みずが「わきみず」。{大山|おおやま}の たからものだよ。'},
-  {id:'e05',topic:'wakimizu',type:'anagram',q:'もじを ならべかえて、じめんの したから わきでる みずの なまえに しよう！',tiles:['わ','き','み','ず'],
-   exp:'こたえは「わきみず」。{大山|おおやま}の たんぼや ひとびとの くらしを ささえてきた みずだよ。'},
-  {id:'e06',topic:'renkon-white',type:'ox',q:'{琉球蓮根|りゅうきゅうれんこん}は、きると すぐに くろく なってしまう。',a:false,
-   exp:'{琉球蓮根|りゅうきゅうれんこん}は、きっても くろく なりにくいのが じまん。まっしろで きれいなんだ。'},
   {id:'e07',topic:'renkon-white',type:'choice',q:'{琉球蓮根|りゅうきゅうれんこん}の じまんの いろは なにいろ？',c:['しろ','あか','みどり'],sw:['#FFFFFF','#E5484D','#3BA55C'],a:0,
    exp:'しろい！ おいしい！ そだつ ちからが すごい！ それが {琉球蓮根|りゅうきゅうれんこん}だよ。'},
   {id:'e08',topic:'renkon-name',type:'anagram',q:'もじを ならべかえて、どろの なかから とれる やさいの なまえに しよう！',tiles:['れ','ん','こ','ん'],
    exp:'こたえは「れんこん」。{大山|おおやま}では「{琉球蓮根|りゅうきゅうれんこん}」を そだてているよ。'},
   {id:'e09',topic:'manner',type:'ox',q:'たんぼには、かってに はいって あそんでも いい。',a:false,
    exp:'たんぼは のうかさんの たいせつな ばしょ。けんがくは みちから して、かってに はいらないでね。'},
-  {id:'e10',topic:'manner',type:'choice',q:'たんぼを けんがくする ときは、どこから みる？',c:['みちから','たんぼの なかに はいって','やねの うえから'],a:0,
-   exp:'けんがくは みちから。たいけんは のうかさんの あんないで たのしもうね。'},
   {id:'e11',topic:'population',type:'ox',q:'{宜野湾市|ぎのわんし}に すんでいる ひとは、およそ 10まんにん。',a:true,
    exp:'がっこうや おみせ、いえが たくさん ある、にぎやかな まちなんだ。'},
   {id:'e12',topic:'sugoi',type:'choice',q:'{宜野湾市|ぎのわんし}の すごいところ。「うみ」と「まち」と、もう ひとつ ちかくに あるのは？',c:['しぜん','ゆきやま','さばく'],a:0,
    exp:'うみも まちも しぜんも、こんなに ちかい！ それが {宜野湾市|ぎのわんし}の すごいところ。'},
   {id:'e13',topic:'exp-order',type:'order',q:'レンコンほり たいけん！ じゅんばんに ならべよう。',steps:['レンコンを ほる','わきみずで どろを おとす','りょうりして あじわう'],
    exp:'ほって、あらって、たべる！ たんぼは はっけん いっぱいの きょうしつ なんだ。'},
-  {id:'e14',topic:'renkon-peel',type:'ox',q:'{琉球蓮根|りゅうきゅうれんこん}は、かわを むかなくても りょうりに つかえる。',a:true,
-   exp:'よく あらえば、かわごと りょうりに つかえるよ。かわむきは いらないんだ。'},
-  {id:'e15',topic:'renkon-taste',type:'choice',q:'{琉球蓮根|りゅうきゅうれんこん}を たべると、どんな かんじ？',c:['シャキシャキ','ネバネバ','カチカチ'],a:0,
-   exp:'シャキシャキで、やさしい あまみ。くせが すくないから たべやすいよ。'},
-  {id:'e16',topic:'taimo',type:'ox',q:'{宜野湾市|ぎのわんし}の みずが、{田芋|たいも}ばたけと {琉球蓮根|りゅうきゅうれんこん}を そだてている。',a:true,
-   exp:'{大山|おおやま}の わきみずが、{田芋|たいも}と レンコンを そだてているんだ。'},
   {id:'e17',topic:'doronko',type:'choice',q:'むかし こどもたちが たんぼで たのしんだ うんどうかいは？',c:['どろんこ うんどうかい','ゆきだるま うんどうかい','シャボンだま うんどうかい'],a:0,
    exp:'たんぼで どろんこに なる うんどうかい！ でも いまは ひらかれなく なってしまったんだ。'},
-  {id:'e18',topic:'doronko',type:'ox',q:'どろんこ うんどうかいは、いまも まいとし ひらかれている。',a:false,
-   exp:'たんぼを かせる のうかさんが へったりして、ひらかれなく なってしまったんだ。'},
   {id:'e19',topic:'location',type:'choice',q:'{宜野湾市|ぎのわんし}が あるのは、どの しま？',c:['おきなわほんとう','いしがきじま','みやこじま'],a:0,
    exp:'{宜野湾市|ぎのわんし}は おきなわほんとうに ある まち。{那覇市|なはし}にも ちかいよ。'},
   {id:'e20',topic:'name',type:'anagram',q:'もじを ならべかえて、この まちの なまえに しよう！（〇〇〇〇し）',tiles:['ぎ','の','わ','ん'],
    exp:'こたえは「ぎのわん」。{宜野湾市|ぎのわんし}だね！'},
-  {id:'e21',topic:'exp-list',type:'choice',q:'たんぼの たいけんで できる ことは どれ？',c:['いきものを さがす','スキーを する','ゆきがっせん'],a:0,
-   exp:'わきみずを みたり、つちに ふれたり、いきものを さがしたり。たんぼは はっけんが いっぱい！'},
   {id:'e22',topic:'issue-people',type:'ox',q:'{大山|おおやま}では、たんぼを まもる ひとが たりなくて こまっている。',a:true,
    exp:'のうかさんが としを とって、しごとを うけつぐ ひとが たりなく なっているんだ。'},
   {id:'e23',topic:'plan-shrink',type:'choice',q:'まちづくりの けいかくで、のうぎょうを つづける ばしょは どう なりそう？',c:['ちいさく なる','おおきく なる','かわらない'],a:0,
@@ -561,44 +572,26 @@ normal: [
    exp:'まちの中に広がる{大山|おおやま}の田んぼでは、わき水を使って{田芋|たいも}を育ててきたんだ。'},
   {id:'n04',topic:'area-now',type:'choice',q:'いまの{大山|おおやま}の水田の広さは、約何ha（ヘクタール）？',c:['約36ha','約3.6ha','約360ha','約1.8ha'],a:0,
    exp:'いまの水田は約36ha。まちの中に、こんなに広い田んぼがあるんだ。'},
-  {id:'n05',topic:'area-plan',type:'number',q:'まちづくりの計画で、農業を続けるための「{営農|えいのう}ゾーン」は約何haになる見通し？',a:1.8,unit:'ha',
-   exp:'計画される{営農|えいのう}ゾーンは約1.8ha。いまの水田よりずっと小さくなる見通しなんだ。計画は今後変わることもあるよ。'},
   {id:'n06',topic:'ha',type:'ox',q:'1ha（ヘクタール）は、たて100m×よこ100mの広さである。',a:true,
    exp:'そのとおり！ 100m×100mの広さが1haだよ。'},
   {id:'n07',topic:'oyama-west',type:'choice',q:'{大山|おおやま}地区は、{宜野湾市|ぎのわんし}のどちら側にある？',c:['西側','東側','北側','南側'],a:0,
    exp:'{大山|おおやま}地区は市の西側。今も{湧|わ}き水や田んぼがのこっているよ。'},
   {id:'n08',topic:'map-north',type:'choice',q:'{宜野湾市|ぎのわんし}の北どなりにある町は？',c:['{北谷町|ちゃたんちょう}','{浦添市|うらそえし}','{那覇市|なはし}','{西原町|にしはらちょう}'],a:0,
    exp:'北どなりは{北谷町|ちゃたんちょう}、南どなりは{浦添市|うらそえし}。{那覇市|なはし}は{浦添市|うらそえし}のさらに南にあるよ。'},
-  {id:'n09',topic:'map-south',type:'choice',q:'{宜野湾市|ぎのわんし}と{那覇市|なはし}の間にある市は？',c:['{浦添市|うらそえし}','{北谷町|ちゃたんちょう}','{中城村|なかぐすくそん}','{北中城村|きたなかぐすくそん}'],a:0,
-   exp:'{宜野湾市|ぎのわんし}の南どなりが{浦添市|うらそえし}、そのさらに南が{那覇市|なはし}だよ。'},
   {id:'n10',topic:'taimobatake',type:'anagram',q:'文字を並べかえて、わき水で育てる、ある作物の畑の名前にしよう！（〇〇〇〇〇〇）',tiles:['た','い','も','ば','た','け'],
    exp:'答えは「たいもばたけ（{田芋畑|たいもばたけ}）」。わき水を使って{田芋|たいも}を育ててきた、大切な場所だよ。'},
   {id:'n11',topic:'exp-order',type:'order',q:'{琉球蓮根|りゅうきゅうれんこん}の田んぼ体験。正しい順番に並べよう！',steps:['{湧|わ}き水を見る','レンコンをほる','{湧|わ}き水で{泥|どろ}をおとす','料理して味わう'],
    exp:'見る、ほる、洗う、味わう！ 田んぼは発見いっぱいの教室なんだ。'},
   {id:'n12',topic:'renkon-white',type:'choice',q:'{琉球蓮根|りゅうきゅうれんこん}が「白さがじまん」と言われるわけは？',c:['切っても{黒|くろ}ずみにくいから','白くぬっているから','雪の中で育つから','白い土で育つから'],a:0,
    exp:'切っても{黒|くろ}ずみにくいのが特ちょう。アク抜きも皮むきもいらないんだ。'},
-  {id:'n13',topic:'renkon-white',type:'ox',q:'{琉球蓮根|りゅうきゅうれんこん}は、料理の前にアク抜きをしなければならない。',a:false,
-   exp:'{琉球蓮根|りゅうきゅうれんこん}は{黒|くろ}ずみにくいので、アク抜きも皮むきもいらないよ。'},
-  {id:'n14',topic:'renkon-taste',type:'fill',q:'{琉球蓮根|りゅうきゅうれんこん}は、くせが少なく、【？】した甘みがある。',c:['すっきり','こってり','ぴりっと','ねっとり'],a:0,
-   exp:'シャキシャキした食感と、すっきりしたやさしい甘みがじまんだよ。'},
   {id:'n15',topic:'issues',type:'choice',q:'{大山|おおやま}の田んぼの課題に「あてはまらない」ものは？',c:['観光客が多すぎる','田んぼを守る人が足りない','田んぼの風景が変わっていく','体験する機会が減っている'],a:0,
    exp:'課題は「守る人が足りない」「風景が変わっていく」「体験する機会が減っている」の3つだよ。'},
-  {id:'n16',topic:'issue-people',type:'choice',q:'田んぼを守る人が足りなくなっている理由は？',c:['農家さんの{高齢化|こうれいか}が進み、受けつぐ人が少ない','田んぼが海にしずんだ','機械がこわれた','水がかれてしまった'],a:0,
-   exp:'農家さんの{高齢化|こうれいか}が進み、仕事を受けつぐ人が足りなくなっているんだ。'},
   {id:'n17',topic:'doronko',type:'fill',q:'子どもたちが楽しんだ「【？】運動会」は、開かれなくなってしまった。',c:['どろんこ','なわとび','水泳','つなひき'],a:0,
    exp:'田んぼを貸せる農家さんが減るなどして、どろんこ運動会は開かれなくなったんだ。'},
-  {id:'n18',topic:'renkon-organic',type:'choice',q:'{琉球蓮根|りゅうきゅうれんこん}を育てるときに「使っていない」ものは？',c:['農薬や化学{肥料|ひりょう}','{湧|わ}き水','{養分|ようぶん}のある土','農家さんの手入れ'],a:0,
-   exp:'{大山|おおやま}の{湧|わ}き水と{養分|ようぶん}のある土で、農薬や化学{肥料|ひりょう}を使わずに育てているよ。'},
   {id:'n19',topic:'sugoi',type:'ox',q:'{宜野湾市|ぎのわんし}は、海・まち・自然が近くにあるのが特ちょうだ。',a:true,
    exp:'海もまちも自然も、こんなに近い！ いろいろな風景が身近にあるのが{宜野湾市|ぎのわんし}のすごいところ。'},
-  {id:'n20',topic:'manner',type:'choice',q:'田んぼを見学するときのルールとして正しいのは？',c:['道から見て、田んぼには勝手に入らない','好きな田んぼに入ってよい','夜だけ見学できる','{田芋|たいも}を1つぬいてよい'],a:0,
-   exp:'見学は道から。体験は農家さんの案内で楽しもうね。'},
   {id:'n21',topic:'water-grows',type:'choice',q:'{大山|おおやま}の{湧|わ}き水が育てている作物の組み合わせは？',c:['{田芋|たいも}と{琉球蓮根|りゅうきゅうれんこん}','お米とさとうきび','パイナップルとマンゴー','ゴーヤーとへちま'],a:0,
    exp:'このまちの水が、{田芋畑|たいもばたけ}と{琉球蓮根|りゅうきゅうれんこん}を育てているんだ。'},
-  {id:'n22',topic:'ha',type:'number',q:'1haは、たて100m×よこ100m。では、1haは何㎡（平方メートル）？',a:10000,unit:'㎡',
-   exp:'100×100＝10,000。1ha＝10,000㎡だよ。'},
-  {id:'n23',topic:'plan-shrink',type:'ox',q:'まちづくりの計画では、農業を続ける場所がいまより小さくなる見通しだ。',a:true,
-   exp:'農業を続ける場所（{営農|えいのう}ゾーン）は、いまの水田よりずっと小さくなる見通し。計画は今後変わることもあるよ。'}
 ],
 
 /* ---------------- むずかしい（中学3年生〜高校2年生） ---------------- */
@@ -607,92 +600,48 @@ hard: [
    exp:'36 ÷ 1.8 ＝ 20。営農ゾーンは、いまの水田の約20分の1になる見通しだ。'},
   {id:'h02',topic:'sqm',type:'number',q:'約36haの水田を㎡で表すと、およそ何㎡？（1ha＝100m×100m）',a:360000,unit:'㎡',
    exp:'1ha＝10,000㎡。36 × 10,000 ＝ 360,000㎡。'},
-  {id:'h03',topic:'issue-people',type:'anagram',q:'文字を並べかえて、「田んぼを守る人が足りない」原因となっている言葉にしよう。（漢字3文字の言葉）',tiles:['こ','う','れ','い','か'],
-   exp:'答えは「こうれいか（高齢化）」。農家さんの高齢化が進み、仕事を受けつぐ人が足りなくなっている。'},
   {id:'h04',topic:'issues',type:'multi',q:'{大山|おおやま}の田んぼが抱える「3つの課題」をすべて選べ。',c:['田んぼを守る人が足りない','田んぼの風景が変わっていく','体験する機会が減っている','{湧|わ}き水がかれてしまった','観光客が田んぼに入りすぎている'],a:[0,1,2],
    exp:'課題は「守る人が足りない」「風景が変わっていく」「体験する機会が減っている」の3つ。'},
   {id:'h05',topic:'exp-order',type:'order',q:'田んぼ体験の6つのステップを、正しい順番に並べよう。',steps:['{湧|わ}き水を見る','水や土にふれる','生き物をさがす','レンコンをほる','{湧|わ}き水で泥をおとす','料理して味わう'],
    exp:'見る、ふれる、さがす、ほる、洗う、味わう。田んぼは発見いっぱいの教室だ。'},
   {id:'h06',topic:'renkon-variety',type:'choice',q:'{大山|おおやま}で育つ{琉球蓮根|りゅうきゅうれんこん}は、どこの系統の品種？',c:['台湾系','ハワイ系','ヨーロッパ系','北海道系'],a:0,
    exp:'台湾系の品種が、{大山|おおやま}の{湧|わ}き水と土で元気に育っている。'},
-  {id:'h07',topic:'renkon-months',type:'fill',q:'農家さんの栽培例では、{琉球蓮根|りゅうきゅうれんこん}は約【？】カ月でとれる。',c:['4','1','8','12'],a:0,
-   exp:'約4カ月でとれる（農家さんの栽培例。育つ期間は季節などで変わる）。'},
   {id:'h08',topic:'einou',type:'choice',q:'「{営農|えいのう}ゾーン」とはどんな場所？',c:['農業を続けるための場所','営業車を停める駐車場','農産物を売る市場','公園として整備する場所'],a:0,
    exp:'{営農|えいのう}ゾーン＝農業を続けるための場所。{大山|おおやま}では約1.8haが計画されている。'},
-  {id:'h09',topic:'doronko',type:'choice',q:'子どもたちが楽しんだ「どろんこ運動会」が開かれなくなった理由として挙げられているのは？',c:['田んぼを貸せる農家が減ったことなど','雨が少なくなったこと','参加する子どもがいなくなったこと','法律で禁止されたこと'],a:0,
-   exp:'田んぼを貸せる農家が減るなどして、開かれなくなった。'},
   {id:'h10',topic:'renkon-features',type:'multi',q:'{琉球蓮根|りゅうきゅうれんこん}の特徴としてあてはまるものをすべて選べ。',c:['切っても黒ずみにくい','台風の被害を受けにくい','よく洗えば皮ごと料理に使える','強い苦みがある','寒い地域でしか育たない'],a:[0,1,2],
    exp:'黒ずみにくく、皮ごと使えて、台風にも強い。白い！おいしい！育つ力がすごい！'},
   {id:'h11',topic:'map-border',type:'choice',q:'{宜野湾市|ぎのわんし}ととなり合っていない市町村は？',c:['{那覇市|なはし}','{浦添市|うらそえし}','{北谷町|ちゃたんちょう}','{中城村|なかぐすくそん}'],a:0,
    exp:'{宜野湾市|ぎのわんし}のまわりには{北谷町|ちゃたんちょう}・{北中城村|きたなかぐすくそん}・{中城村|なかぐすくそん}・{西原町|にしはらちょう}・{浦添市|うらそえし}がある。{那覇市|なはし}は{浦添市|うらそえし}のさらに南だ。'},
   {id:'h12',topic:'sea',type:'choice',q:'{宜野湾市|ぎのわんし}の西海岸が面している海は？',c:['東シナ海','太平洋','日本海','オホーツク海'],a:0,
    exp:'{宜野湾市|ぎのわんし}は沖縄本島中南部の西海岸。東シナ海に面している。'},
-  {id:'h13',topic:'ratio',type:'ox',q:'まちづくりの計画では、{大山|おおやま}で農業を続ける場所は、いまより広くなる見通しだ。',a:false,
-   exp:'反対。農業を続ける場所は小さくなる見通しだ（計画は今後変わる場合がある）。'},
   {id:'h14',topic:'treasures',type:'choice',q:'「残したいのは、田んぼだけ？」——{大山|おおやま}のたからとして挙げられていないものは？',c:['大型商業施設のにぎわい','農家さんのわざ','わき水のある風景','土にふれる体験'],a:0,
    exp:'農家さんのわざ、わき水のある風景、土にふれる体験。田んぼと一緒に未来へつなぎたい、{大山|おおやま}のたからだ。'},
   {id:'h15',topic:'catchphrase',type:'fill',q:'{宜野湾市|ぎのわんし}は「海・まち・自然、そして【？】のあるまち」。',c:['{湧|わ}き水','温泉','雪山','砂丘'],a:0,
    exp:'海も、まちも、自然も、そして大切な{湧|わ}き水もある。このまちの水が、{田芋畑|たいもばたけ}と{琉球蓮根|りゅうきゅうれんこん}を育てている。'},
-  {id:'h16',topic:'sqm',type:'number',q:'計画される{営農|えいのう}ゾーン約1.8haは、およそ何㎡？（1ha＝100m×100m）',a:18000,unit:'㎡',
-   exp:'1.8 × 10,000 ＝ 18,000㎡。'},
-  {id:'h17',topic:'issue-scenery',type:'choice',q:'課題「田んぼの風景が変わっていく」の内容として正しいのは？',c:['手入れができず、草がしげる田んぼがある','田んぼがすべて池になった','{田芋|たいも}の葉が赤くなった','{湧|わ}き水が海水に変わった'],a:0,
-   exp:'手入れができず、草がしげってしまう田んぼも出てきている。'},
-  {id:'h18',topic:'renkon-organic',type:'ox',q:'{琉球蓮根|りゅうきゅうれんこん}は、農薬や化学肥料を使わずに育てられている。',a:true,
-   exp:'{大山|おおやま}の{湧|わ}き水と、養分のある土で育てている。'},
   {id:'h19',topic:'wakimizu',type:'choice',q:'{大山|おおやま}の{湧|わ}き水が支えてきたものとして紹介されているのは？',c:['田んぼや人びとのくらし','工場の発電','港の船の運航','空港の運営'],a:0,
    exp:'地面の下からわき出るきれいな水が、田んぼや人びとのくらしを支えてきた。'},
   {id:'h20',topic:'doronko',type:'anagram',q:'文字を並べかえて、かつて子どもたちが田んぼで楽しんだ行事の名前にしよう。（〇〇〇〇〇〇〇〇〇〇）',tiles:['ど','ろ','ん','こ','う','ん','ど','う','か','い'],
    exp:'答えは「どろんこうんどうかい（どろんこ運動会）」。田んぼを貸せる農家が減るなどして、いまは開かれなくなった。'},
-  {id:'h21',topic:'issue-people',type:'choice',q:'田んぼを守る人が足りなくなっている主な背景は？',c:['農家の高齢化と、受けつぐ人の不足','農業機械の不足','{湧|わ}き水の減少','台風の増加'],a:0,
-   exp:'農家さんの高齢化が進み、仕事を受けつぐ人が足りなくなっている。'},
-  {id:'h22',topic:'oyama-west',type:'ox',q:'{大山|おおやま}地区は、{宜野湾市|ぎのわんし}の東側にある。',a:false,
-   exp:'{大山|おおやま}地区は市の西側。今も{湧|わ}き水や田んぼがのこっている。'}
 ],
 
 /* ---------------- 鬼（高校3年生〜おとな） ---------------- */
 oni: [
   {id:'o01',topic:'reduction',type:'number',q:'いまの水田（約36ha）が、計画どおり{営農|えいのう}ゾーン（約1.8ha）になると、農業を続ける土地は約何ha減る？',a:34.2,unit:'ha',
    exp:'36 − 1.8 ＝ 34.2ha。'},
-  {id:'o02',topic:'ratio',type:'number',q:'{営農|えいのう}ゾーン約1.8haは、いまの水田約36haの何％にあたる？',a:5,unit:'％',
-   exp:'1.8 ÷ 36 ＝ 0.05。つまり5％。'},
   {id:'o03',topic:'square',type:'number',q:'約36haの土地を正方形とみなすと、1辺はおよそ何m？（1ha＝100m×100m）',a:600,unit:'m',
    exp:'36ha＝360,000㎡。√360,000 ＝ 600m。'},
-  {id:'o04',topic:'reduction',type:'choice',q:'計画どおりになった場合、いまの水田（約36ha）に対して失われる農地の割合はおよそ？（{営農|えいのう}ゾーンは約1.8ha）',c:['約95％','約50％','約80％','約20％'],a:0,
-   exp:'(36 − 1.8) ÷ 36 ＝ 0.95。約95％の農地が失われる見通し（計画は今後変わる場合がある）。'},
   {id:'o05',topic:'renkon-features',type:'multi',q:'{琉球蓮根|りゅうきゅうれんこん}について、正しい記述をすべて選べ。',c:['台湾系の品種である','農家さんの栽培例では約4カ月で収穫できる','切っても黒ずみにくく、アク抜きや皮むきがいらない','化学肥料で短期間に育てている','台風の被害を受けやすいのが弱点'],a:[0,1,2],
    exp:'台湾系の品種で、約4カ月でとれ（栽培例）、台風の被害も受けにくい。農薬や化学肥料は使わずに育てている。'},
   {id:'o06',topic:'arakawa',type:'choice',q:'{大山|おおやま}で{琉球蓮根|りゅうきゅうれんこん}を手入れしながら育てているのは？',c:['{荒川|あらかわ}さんご夫妻（NATURAL TONE）','市の農業委員会','県の試験研究機関','地元高校の農業部'],a:0,
    exp:'{荒川|あらかわ}さんご夫妻（NATURAL TONE）が、手入れをしながら育てている。体験は農家さんの案内で。'},
   {id:'o07',topic:'treasures',type:'anagram',q:'文字を並べかえて、{大山|おおやま}のたからの一つにしよう。（〇〇〇〇の〇〇〇〇〇〇）',tiles:['わ','き','み','ず','の','あ','る','ふ','う','け','い'],
    exp:'答えは「わきみずのあるふうけい（わき水のある風景）」。農家さんのわざ、土にふれる体験とともに、未来へつなぎたい{大山|おおやま}のたからだ。'},
-  {id:'o08',topic:'treasures',type:'anagram',q:'文字を並べかえて、{大山|おおやま}のたからの一つにしよう。（ヒント：人が受けついできたもの）',tiles:['の','う','か','さ','ん','の','わ','ざ'],
-   exp:'答えは「のうかさんのわざ（農家さんのわざ）」。わき水のある風景、土にふれる体験とともに、未来へつなぎたい{大山|おおやま}のたからだ。'},
   {id:'o09',topic:'map',type:'order',q:'北から南へ、正しい順番に並べよう。',steps:['{北谷町|ちゃたんちょう}','{宜野湾市|ぎのわんし}','{浦添市|うらそえし}','{那覇市|なはし}'],
    exp:'{北谷町|ちゃたんちょう}、{宜野湾市|ぎのわんし}、{浦添市|うらそえし}、{那覇市|なはし}の順。{宜野湾市|ぎのわんし}は{那覇市|なはし}にも近い。'},
-  {id:'o10',topic:'map',type:'multi',q:'{宜野湾市|ぎのわんし}ととなり合う市町村をすべて選べ。',c:['{北谷町|ちゃたんちょう}','{浦添市|うらそえし}','{西原町|にしはらちょう}','{中城村|なかぐすくそん}','{那覇市|なはし}','{嘉手納町|かでなちょう}'],a:[0,1,2,3],
-   exp:'となり合うのは{北谷町|ちゃたんちょう}・{北中城村|きたなかぐすくそん}・{中城村|なかぐすくそん}・{西原町|にしはらちょう}・{浦添市|うらそえし}。{那覇市|なはし}は{浦添市|うらそえし}の南、{嘉手納町|かでなちょう}は{北谷町|ちゃたんちょう}のさらに北にある。'},
-  {id:'o11',topic:'doronko',type:'choice',q:'子どもたちが楽しんだ「どろんこ運動会」が開かれなくなった背景として示されているのは？',c:['田んぼを貸せる農家が減るなどしたため','{湧|わ}き水の水質が悪化したため','会場が市外に移ったため','子どもの数が減ったため'],a:0,
-   exp:'田んぼを貸せる農家が減るなどして、開かれなくなった。土にふれる体験の機会が減っていることも課題だ。'},
-  {id:'o12',topic:'area-shape',type:'choice',q:'「1ha＝100m×100m」を使うと、約1.8haと同じ広さになるのはどれ？',c:['100m×180m','18m×100m','180m×180m','1,800m×100m'],a:0,
-   exp:'100m × 180m ＝ 18,000㎡ ＝ 1.8ha。'},
   {id:'o13',topic:'issues',type:'multi',q:'{大山|おおやま}の田んぼの課題として、正しい記述をすべて選べ。',c:['農家の高齢化が進み、受けつぐ人が足りない','手入れができず、草がしげる田んぼがある','まちづくりで農地が小さくなる計画がある','{湧|わ}き水が増えすぎて田んぼがあふれている','観光客の立ち入りで田んぼが荒れている'],a:[0,1,2],
    exp:'担い手の不足、手入れが行き届かない田んぼ、農地が小さくなる計画は、いずれも課題として挙げられている。湧き水の増加や観光客による被害は挙げられていない。'},
-  {id:'o14',topic:'oyama-west',type:'choice',q:'{大山|おおやま}地区の位置として正しいのは？',c:['{宜野湾市|ぎのわんし}の西側','{宜野湾市|ぎのわんし}の東側','{宜野湾市|ぎのわんし}の北の端','{宜野湾市|ぎのわんし}の南の端'],a:0,
-   exp:'市の西側。今も{湧|わ}き水や田んぼがのこっている。'},
-  {id:'o15',topic:'town',type:'choice',q:'{宜野湾市|ぎのわんし}が「にぎやかなまち」とされる理由として紹介されているのは？',c:['学校やお店、住宅地が広がっている','大きな工業地帯がある','国際空港がある','大規模な港湾がある'],a:0,
-   exp:'人口はおよそ10万人。学校やお店、住宅地が広がり、海が近くてくらしやすいまちとして知られている。'},
-  {id:'o16',topic:'renkon-catch',type:'fill',q:'{琉球蓮根|りゅうきゅうれんこん}を表す言葉「白い！おいしい！【？】がすごい！」',c:['育つ力','栄養','値段','大きさ'],a:0,
-   exp:'白さ、やさしい甘み、そして沖縄で元気に育つたくましさがじまんだ。'},
-  {id:'o17',topic:'exp-order',type:'choice',q:'田んぼ体験の流れで、「レンコンをほる」の次に行うことは？',c:['{湧|わ}き水で泥をおとす','生き物をさがす','水や土にふれる','料理して味わう'],a:0,
-   exp:'{湧|わ}き水を見る、水や土にふれる、生き物をさがす、レンコンをほる、{湧|わ}き水で泥をおとす、料理して味わう、の順。'},
   {id:'o18',topic:'plan-change',type:'ox',q:'{営農|えいのう}ゾーン約1.8haは確定した数字で、今後変わることはない。',a:false,
    exp:'面積は2026年10月時点の計画によるもので、今後変わる場合がある。'},
-  {id:'o19',topic:'square',type:'choice',q:'約1.8haの土地を正方形とみなすと、1辺はおよそ何m？',c:['約134m','約18m','約180m','約42m'],a:0,
-   exp:'1.8ha＝18,000㎡。√18,000 ≒ 134m。'},
-  {id:'o20',topic:'ratio',type:'number',q:'いまの水田約36haは、{営農|えいのう}ゾーン約1.8haの何倍？',a:20,unit:'倍',
-   exp:'36 ÷ 1.8 ＝ 20倍。'},
-  {id:'o21',topic:'renkon-peel',type:'choice',q:'{琉球蓮根|りゅうきゅうれんこん}を皮ごと料理に使うときのポイントとして示されているのは？',c:['よく洗うこと','酢水に一晩つけること','皮を焼いてから使うこと','塩でもむこと'],a:0,
-   exp:'よく洗って、皮ごと料理に使える。'},
   {id:'o22',topic:'wakimizu',type:'choice',q:'{大山|おおやま}の{湧|わ}き水について、正しい説明は？',c:['地面の下からわき出る水で、田んぼや人びとのくらしを支えてきた','海水をろ過して作られた水である','近年になって掘られた井戸の水である','主に工業用水として使われている'],a:0,
    exp:'地面の下からわき出るきれいな水が、昔から田んぼや人びとのくらしを支えてきた。'}
 ]
@@ -733,7 +682,8 @@ const LEVELS = {
   hard:  {key:'hard',  name:'むずかしい', icon:'lotusRoot', c:'#F59A2C', who:'<ruby>中学<rt>ちゅうがく</rt></ruby>3<ruby>年生<rt>ねんせい</rt></ruby>〜<ruby>高校<rt>こうこう</rt></ruby>2<ruby>年生<rt>ねんせい</rt></ruby>', ruby:false, kid:false, meter:3},
   oni:   {key:'oni',   name:'<ruby>鬼<rt>おに</rt></ruby>', icon:'oni', c:'#D7263D', who:'<ruby>高校<rt>こうこう</rt></ruby>3<ruby>年生<rt>ねんせい</rt></ruby>〜おとな', ruby:false, kid:false, meter:4}
 };
-const QUESTIONS_PER_GAME = 10;
+const GAME_PLAN = ['easy','easy','easy','normal','normal','normal','hard','hard','hard','oni'];
+const QUESTIONS_PER_GAME = GAME_PLAN.length;
 const TYPE_KID   = {ox:'まる・ばつ', choice:'えらぶ', fill:'あなうめ', multi:'ぜんぶ えらぶ', anagram:'もじならべ', order:'じゅんばん', number:'すうじ'};
 const TYPE_ADULT = {ox:'○×', choice:'選択', fill:'穴うめ', multi:'複数選択', anagram:'文字ならべ', order:'並べかえ', number:'数字入力'};
 const HOW_KID    = {ox:'まる か ばつ を タッチしてね', choice:'ただしい ものを 1つ タッチしてね', fill:'□に はいる ことばを タッチしてね',
@@ -747,7 +697,7 @@ const HOW_ADULT  = {ox:'○か×を選ぼう', choice:'正しいものを1つ選
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
-const S = {lv:null, L:null, qs:[], idx:0, score:0, combo:0, results:[], answered:false};
+const S = {lv:null, L:null, prevLv:null, qs:[], idx:0, score:0, combo:0, results:[], answered:false};
 const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function R(s){ return String(s).replace(RUBY_RE, (S.L && S.L.ruby) ? '<ruby>$1<rt>$2</rt></ruby>' : '$1'); }
@@ -758,24 +708,32 @@ function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floo
 function fmtNum(n){ const s = String(n); const p = s.split('.'); return Number(p[0]).toLocaleString('ja-JP') + (p[1] !== undefined ? '.' + p[1] : ''); }
 
 /* ---------- 出題えらび ---------- */
-const recent = {easy:[], normal:[], hard:[], oni:[]};
-function pickQuestions(lv, n){
-  const bank = BANK[lv];
-  const rec = new Set(recent[lv]);
-  const pool = shuffle(bank.slice()).sort((a, b) => (rec.has(a.id) ? 1 : 0) - (rec.has(b.id) ? 1 : 0));
-  const chosen = [], topics = new Set(), types = {};
-  const passes = [{topic:true, type:true}, {topic:true, type:false}, {topic:false, type:false}];
-  for (const p of passes){
-    for (const q of pool){
-      if (chosen.length >= n) break;
-      if (chosen.indexOf(q) >= 0) continue;
-      if (p.topic && topics.has(q.topic)) continue;
-      if (p.type && (types[q.type] || 0) >= 4) continue;
-      chosen.push(q); topics.add(q.topic); types[q.type] = (types[q.type] || 0) + 1;
+let recent = [];
+function pickQuestions(){
+  const rec = new Set(recent);
+  const usedTopics = new Set(), chosen = [];
+  const need = {};
+  GAME_PLAN.forEach(lv => { need[lv] = (need[lv] || 0) + 1; });
+  const byLv = {};
+  Object.keys(need).forEach(lv => {
+    const pool = shuffle(BANK[lv].map(q => Object.assign({lv:lv}, q)))
+      .sort((a, b) => (rec.has(a.id) ? 1 : 0) - (rec.has(b.id) ? 1 : 0));
+    const got = [], types = {};
+    const passes = [{topic:true, type:true}, {topic:true, type:false}, {topic:false, type:false}];
+    for (const p of passes){
+      for (const q of pool){
+        if (got.length >= need[lv]) break;
+        if (got.indexOf(q) >= 0) continue;
+        if (p.topic && usedTopics.has(q.topic)) continue;
+        if (p.type && (types[q.type] || 0) >= 2) continue;
+        got.push(q); usedTopics.add(q.topic); types[q.type] = (types[q.type] || 0) + 1;
+      }
     }
-  }
-  recent[lv] = chosen.map(q => q.id);
-  return shuffle(chosen);
+    byLv[lv] = got;
+  });
+  GAME_PLAN.forEach(lv => chosen.push(byLv[lv].shift()));
+  recent = chosen.map(q => q.id);
+  return chosen;
 }
 function prepare(q){
   const p = Object.assign({}, q);
@@ -940,32 +898,41 @@ function playHero(){
     else heroTimers.push(setTimeout(() => setPlot(h, i, plantKind(i), true), 500 + i * 170));
   }
 }
-function buildLevels(){
-  const box = $('#levels');
-  box.innerHTML = Object.values(LEVELS).map(L =>
-    '<button class="lv-btn press" type="button" data-lv="' + L.key + '">'
+function buildLadder(){
+  const steps = [
+    {lv:'easy',   no:'1〜3もんめ'},
+    {lv:'normal', no:'4〜6もんめ'},
+    {lv:'hard',   no:'7〜9もんめ'},
+    {lv:'oni',    no:'さいごの 10もんめ'}
+  ];
+  $('#ladder').innerHTML = steps.map(st => { const L = LEVELS[st.lv];
+    return '<li class="rung" data-lv="' + L.key + '">'
     + '<span class="ic">' + I[L.icon] + '</span>'
     + '<span class="nm">' + L.name + '</span>'
-    + '<span class="who">' + L.who + '</span>'
+    + '<span class="no">' + st.no + '</span>'
     + '<span class="pips" aria-label="むずかしさ ' + L.meter + '">' + [1,2,3,4].map(k => I.pip(k <= L.meter, L.c)).join('') + '</span>'
-    + '</button>').join('');
-  box.querySelectorAll('.lv-btn').forEach(b => b.addEventListener('click', () => startGame(b.dataset.lv)));
+    + '</li>'; }).join('');
 }
 function goTitle(){
   clearConfetti(); closeSheet(); closeModal(); stopSpeech(); clearIdleCountdown();
-  S.lv = null; S.L = null;
+  S.lv = null; S.L = null; S.prevLv = null;
   document.body.removeAttribute('data-level');
   showScreen('title'); playHero();
 }
 
 /* ---------- ゲーム開始 ---------- */
-function startGame(lv){
-  ensureAudio(); clearConfetti(); closeModal();
+function setLevel(lv){
   S.lv = lv; S.L = LEVELS[lv];
-  S.qs = pickQuestions(lv, QUESTIONS_PER_GAME).map(prepare);
-  S.idx = 0; S.score = 0; S.combo = 0; S.results = []; S.answered = false;
   document.body.setAttribute('data-level', lv);
-  $('#lvTag').innerHTML = '<span class="ic">' + I[S.L.icon] + '</span>' + S.L.name;
+  const tag = $('#lvTag');
+  tag.innerHTML = '<span class="ic">' + I[S.L.icon] + '</span>' + S.L.name;
+  tag.classList.remove('up'); void tag.offsetWidth; tag.classList.add('up');
+}
+function startGame(){
+  ensureAudio(); clearConfetti(); closeModal();
+  S.qs = pickQuestions().map(prepare);
+  S.idx = 0; S.score = 0; S.combo = 0; S.results = []; S.answered = false; S.prevLv = null;
+  setLevel(S.qs[0].lv);
   $('#quitBtn').innerHTML = I.close + '<span class="lbl">やめる</span>';
   $('#readBtn').innerHTML = I.speaker + T('よみあげ', '読み上げ');
   $('#sheetRead').innerHTML = I.speaker + T('よみあげ', '読み上げ');
@@ -978,6 +945,13 @@ function startGame(lv){
 function qHTML(q){ return R(q.q).replace('【？】', '<span class="blank" id="blank">？</span>'); }
 function renderQuestion(){
   const q = S.qs[S.idx]; S.answered = false;
+  if (q.lv !== S.prevLv){
+    const first = S.prevLv === null;
+    S.prevLv = q.lv; setLevel(q.lv);
+    $('#readBtn').innerHTML = I.speaker + T('よみあげ', '読み上げ');
+    $('#sheetRead').innerHTML = I.speaker + T('よみあげ', '読み上げ');
+    if (!first) announceLevel(q.lv);
+  }
   $('#qno').textContent = T('だい ' + (S.idx + 1) + ' もん', '第' + (S.idx + 1) + '問');
   $('#count').innerHTML = (S.idx + 1) + '<small> / ' + S.qs.length + '</small>';
   $('#qtype').textContent = (S.L.kid ? TYPE_KID : TYPE_ADULT)[q.type];
@@ -990,6 +964,19 @@ function renderQuestion(){
   const card = $('#qcard'); card.classList.remove('enter', 'shake'); void card.offsetWidth; card.classList.add('enter');
   window.scrollTo(0, 0);
   resetIdle();
+}
+function announceLevel(lv){
+  const L = LEVELS[lv];
+  const msg = {
+    normal:'ここから「ふつう」の もんだいだよ！',
+    hard:'ここから「むずかしい」もんだい！ がんばれ！',
+    oni:'おとなでも むずかしい {鬼|おに}もんだい。<br>ちょうせん しよう！'
+  }[lv];
+  if (!msg) return;
+  sStart();
+  openModal({title: '<span class="lvup-ic">' + I[L.icon] + '</span>' + Rk(lv === 'oni' ? 'さいごの もんだい！' : 'レベル アップ！'),
+    body: '<p class="lvup-msg">' + Rk(msg) + '</p>',
+    buttons:[{label: lv === 'oni' ? 'ちょうせん する！' : 'つづける', cls:'go-btn press', onClick: closeModal}]});
 }
 function goBtn(label){ const b = el('button', 'go-btn press'); b.type = 'button'; b.textContent = label; return b; }
 function subBtn(label){ const b = el('button', 'sub-btn press'); b.type = 'button'; b.textContent = label; return b; }
@@ -1233,7 +1220,7 @@ function next(){
 
 /* ---------- 結果 ---------- */
 function rankFor(score){
-  if (score === QUESTIONS_PER_GAME) return S.lv === 'oni' ? '{鬼|おに}をこえた わき{水|みず}マスター' : 'でんせつの わき{水|みず}マスター';
+  if (score === QUESTIONS_PER_GAME) return '{鬼|おに}をこえた でんせつの わき{水|みず}マスター';
   if (score >= 8) return '{大山|おおやま}たからはかせ';
   if (score >= 6) return 'わき{水|みず}たんけん{隊長|たいちょう}';
   if (score >= 3) return 'たんけん{隊|たい}メンバー';
@@ -1252,7 +1239,8 @@ const JIMAN = [
   {icon:'lotusRoot', title:'{琉球蓮根|りゅうきゅうれんこん}', text:'{白|しろ}い！ おいしい！ {育|そだ}つ{力|ちから}が すごい！ わき{水|みず}が{育|そだ}てる、あたらしい じまん。', ask:'しらべてみよう：どんな{料理|りょうり}に あうかな？'}
 ];
 function showResult(){
-  recordPlay(S.lv, S.score);
+  recordPlay(S.score, S.results.length && S.results[S.results.length - 1].ok);
+  setLevel('easy'); $('#lvTag').classList.remove('up');
   showScreen('result');
   const f = $('#field');
   f.innerHTML = S.results.map((r, i) => '<div class="plot">' + plotSVG(r.ok ? plantKind(i) : 'mud') + '</div>').join('');
@@ -1272,7 +1260,7 @@ function showResult(){
   $('#rank').innerHTML = Rk(rankFor(S.score));
   $('#resMsg').innerHTML = R(messageFor(S.score));
   $('#againBtn').textContent = T('もういちど あそぶ', 'もう一度あそぶ');
-  $('#levelBtn').textContent = T('レベルを えらぶ', 'レベルを選ぶ');
+  $('#levelBtn').textContent = 'さいしょに もどる';
   $('#jimanHead').innerHTML = Rk('「{宜野湾|ぎのわん}のじまん」、{見|み}つかった？');
   $('#jimanSub').innerHTML = Rk('はっぴょうの テーマに なりそうな たからものだよ');
   $('#jimanCards').innerHTML = JIMAN.map(j => '<article class="card jcard"><div class="ji">' + I[j.icon] + '</div><h3>' + Rk(j.title) + '</h3><p>' + Rk(j.text) + '</p><p class="ask">' + Rk(j.ask) + '</p></article>').join('');
@@ -1280,8 +1268,8 @@ function showResult(){
   $('#reviewSub').innerHTML = Rk('こたえを たしかめて、もう いちど チャレンジしよう');
   $('#reviewList').innerHTML = S.results.map((r, i) =>
     '<li class="' + (r.ok ? 'ok' : 'ng') + '"><span class="rv-mark" role="img" aria-label="' + (r.ok ? 'せいかい' : 'ふせいかい') + '">' + (r.ok ? I.check : I.cross) + '</span><div>'
-    + '<p class="rv-q">' + (i + 1) + '. ' + R(r.q.q).replace('【？】', '（　　）') + '</p>'
-    + '<p class="rv-a">' + T('こたえ', '答え') + '：<b>' + answerHTML(r.q, true) + '</b></p></div></li>').join('');
+    + '<p class="rv-q"><span class="rv-lv" data-lv="' + r.q.lv + '">' + LEVELS[r.q.lv].name + '</span>' + (i + 1) + '. ' + Rk(r.q.q).replace('【？】', '（　　）') + '</p>'
+    + '<p class="rv-a">こたえ：<b>' + answerHTML(r.q, true) + '</b></p></div></li>').join('');
   $('#idleNote').textContent = 'しばらく さわらないと、さいしょの がめんに もどります';
   sFanfare();
   if (S.score >= 6) confetti();
@@ -1349,25 +1337,23 @@ function closeModal(){ $('#modal').hidden = true; }
    スタッフ用：プレイ記録（この端末の中だけに保存）
    タイトル上部の「第37回 宜野湾市産業まつり」を3秒長おしで表示
    ========================================================= */
-const STORE_KEY = 'ginowanJimanQuiz_stats_v1';
+const STORE_KEY = 'ginowanJimanQuiz_stats_v2';
 function loadStats(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; } }
 function saveStats(s){ try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch (e) {} }
 function todayStr(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-function recordPlay(lv, score){
+function recordPlay(score, oniOk){
   const s = loadStats(), d = todayStr();
   s[d] = s[d] || {};
-  const r = s[d][lv] || {plays:0, sum:0, perfect:0};
-  r.plays++; r.sum += score; if (score === QUESTIONS_PER_GAME) r.perfect++;
-  s[d][lv] = r; saveStats(s);
+  const r = s[d].all || {plays:0, sum:0, perfect:0, oni:0};
+  r.plays++; r.sum += score; if (score === QUESTIONS_PER_GAME) r.perfect++; if (oniOk) r.oni = (r.oni || 0) + 1;
+  s[d].all = r; saveStats(s);
 }
 function statsHTML(){
-  const s = loadStats(), dates = Object.keys(s).sort().reverse(), lvs = ['easy', 'normal', 'hard', 'oni'];
+  const s = loadStats(), dates = Object.keys(s).filter(d => s[d].all).sort().reverse();
   if (!dates.length) return '<p>まだ記録がありません。</p>';
-  const cell = (r) => r ? r.plays + '回<small>平均 ' + (r.sum / r.plays).toFixed(1) + '点・満点 ' + r.perfect + '</small>' : '—';
-  let html = '<table class="stats"><thead><tr><th>日付</th><th>かんたん</th><th>ふつう</th><th>むずかしい</th><th>鬼</th><th>合計</th></tr></thead><tbody>';
-  dates.forEach(d => {
-    const tot = lvs.reduce((a, l) => a + ((s[d][l] && s[d][l].plays) || 0), 0);
-    html += '<tr><td>' + d.slice(5).replace('-', '/') + '</td>' + lvs.map(l => '<td>' + cell(s[d][l]) + '</td>').join('') + '<td><b>' + tot + '回</b></td></tr>';
+  let html = '<table class="stats"><thead><tr><th>日付</th><th>プレイ</th><th>平均</th><th>満点</th><th>鬼もんだい正解</th></tr></thead><tbody>';
+  dates.forEach(d => { const r = s[d].all;
+    html += '<tr><td>' + d.slice(5).replace('-', '/') + '</td><td><b>' + r.plays + '回</b></td><td>' + (r.sum / r.plays).toFixed(1) + '点</td><td>' + r.perfect + '</td><td>' + (r.oni || 0) + '</td></tr>';
   });
   return html + '</tbody></table><p class="stats-note">このiPadのブラウザの中だけに保存されています（「履歴とWebサイトデータを消去」で消えます）。</p>';
 }
@@ -1402,7 +1388,8 @@ $('#quitBtn').addEventListener('click', () => {
   openModal({title: Rk('クイズを やめて、さいしょに もどる？'), body:'',
     buttons:[{label:'つづける', cls:'go-btn press', onClick: closeModal}, {label:'やめる', cls:'sub-btn press', onClick: goTitle}]});
 });
-$('#againBtn').addEventListener('click', () => startGame(S.lv || 'easy'));
+$('#againBtn').addEventListener('click', () => startGame());
+$('#startBtn').addEventListener('click', () => startGame());
 $('#levelBtn').addEventListener('click', goTitle);
 document.querySelectorAll('.snd-btn').forEach(b => b.addEventListener('click', () => { ensureAudio(); setSound(!soundOn); if (soundOn) sTap(); }));
 /* ---------- フルスクリーン（Chromeのタブ・ブックマークバーを隠す） ---------- */
@@ -1437,7 +1424,7 @@ document.querySelectorAll('.fs-btn').forEach(b => b.addEventListener('click', ()
 document.addEventListener('fullscreenchange', paintFs);
 document.addEventListener('webkitfullscreenchange', paintFs);
 /* レベルをえらんだタイミングで自動的にフル画面へ（ユーザー操作が必要なため） */
-document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('.lv-btn')) fsEnter(); }, true);
+document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#startBtn, #againBtn')) fsEnter(); }, true);
 document.addEventListener('pointerdown', () => { ensureAudio(); resetIdle(); }, {passive:true});
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -1445,7 +1432,7 @@ if ('speechSynthesis' in window){ try { window.speechSynthesis.getVoices(); wind
 else { $('#readBtn').classList.add('hidden'); $('#sheetRead').classList.add('hidden'); }
 
 $('#heroMascot').innerHTML = mascot('happy');
-buildLevels();
+buildLadder();
 setSound(soundOn);
 paintFs();
 playHero();
