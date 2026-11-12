@@ -383,6 +383,7 @@ li.ok .rv-mark{background:var(--ok)} li.ng .rv-mark{background:var(--ng)}
       <div class="levels" id="levels"></div>
       <div class="title-foot">
         <button class="snd-btn pill press" type="button"></button>
+        <button class="fs-btn pill press" type="button"></button>
         <p class="tip on-water">ヒントは この ブースの てんじに かくれているよ</p>
       </div>
       </div>
@@ -396,6 +397,7 @@ li.ok .rv-mark{background:var(--ok)} li.ng .rv-mark{background:var(--ng)}
         <button class="pill press" id="quitBtn" type="button"></button>
         <span class="lv-tag" id="lvTag"></span>
         <span class="count" id="count"></span>
+        <button class="fs-btn icon-btn press" type="button"></button>
         <button class="snd-btn icon-btn press" type="button"></button>
       </header>
       <div class="strip" id="strip" aria-hidden="true"></div>
@@ -704,6 +706,8 @@ const I = {
   speaker:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9h4l5-4.2v14.4l-5-4.2h-4z" fill="currentColor"/><path d="M16 8.6a5 5 0 0 1 0 6.8M18.6 6.2a8.6 8.6 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
   note:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.5V5.5l11-2.2v12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><circle cx="6.4" cy="17.6" r="3" fill="currentColor"/><circle cx="17.4" cy="15.3" r="3" fill="currentColor"/></svg>',
   mute:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.5V5.5l11-2.2v12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" opacity=".4"/><circle cx="6.4" cy="17.6" r="3" fill="currentColor" opacity=".4"/><circle cx="17.4" cy="15.3" r="3" fill="currentColor" opacity=".4"/><path d="M3 3l18 18" stroke="#EF4D5A" stroke-width="3" stroke-linecap="round"/></svg>',
+  fsOn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  fsOff:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   close:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>',
   check:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.6l4.5 4.5L19 7.4" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   cross:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></svg>',
@@ -1401,6 +1405,39 @@ $('#quitBtn').addEventListener('click', () => {
 $('#againBtn').addEventListener('click', () => startGame(S.lv || 'easy'));
 $('#levelBtn').addEventListener('click', goTitle);
 document.querySelectorAll('.snd-btn').forEach(b => b.addEventListener('click', () => { ensureAudio(); setSound(!soundOn); if (soundOn) sTap(); }));
+/* ---------- フルスクリーン（Chromeのタブ・ブックマークバーを隠す） ---------- */
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+const fsCan = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+function fsEnter(){
+  if (!fsCan || fsEl()) return;
+  const d = document.documentElement;
+  try {
+    const r = d.requestFullscreen ? d.requestFullscreen({navigationUI:'hide'}) : d.webkitRequestFullscreen();
+    if (r && r.catch) r.catch(() => {});
+  } catch (e) {}
+}
+function fsExit(){
+  if (!fsEl()) return;
+  try {
+    const r = document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen();
+    if (r && r.catch) r.catch(() => {});
+  } catch (e) {}
+}
+function paintFs(){
+  const on = !!fsEl();
+  document.querySelectorAll('.fs-btn').forEach(b => {
+    if (!fsCan){ b.classList.add('hidden'); return; }
+    const label = on ? 'フルがめん やめる' : 'フルがめん';
+    b.innerHTML = (on ? I.fsOff : I.fsOn) + (b.classList.contains('pill') ? '<span class="lbl">' + label + '</span>' : '');
+    b.setAttribute('aria-label', label);
+    b.setAttribute('aria-pressed', String(on));
+  });
+}
+document.querySelectorAll('.fs-btn').forEach(b => b.addEventListener('click', () => { sTap(); fsEl() ? fsExit() : fsEnter(); }));
+document.addEventListener('fullscreenchange', paintFs);
+document.addEventListener('webkitfullscreenchange', paintFs);
+/* レベルをえらんだタイミングで自動的にフル画面へ（ユーザー操作が必要なため） */
+document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('.lv-btn')) fsEnter(); }, true);
 document.addEventListener('pointerdown', () => { ensureAudio(); resetIdle(); }, {passive:true});
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -1410,6 +1447,7 @@ else { $('#readBtn').classList.add('hidden'); $('#sheetRead').classList.add('hid
 $('#heroMascot').innerHTML = mascot('happy');
 buildLevels();
 setSound(soundOn);
+paintFs();
 playHero();
 </script>
 </body>
